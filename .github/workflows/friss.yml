@@ -1,7 +1,7 @@
 name: Friss hírek értesítés
 
-# Folyamatos frissítés: a GitHub 5 percenként indítja, egy futás kb. 4,5 percig tart és közben PERCENKÉNT
-# ellenőrzi a híreket (értesítés minden új hírről) és az árfolyamokat, majd feltölti őket az alkalmazásnak.
+# Egy futás kb. 25 percig tart, percenként frissít, a végén maga indítja a következőt.
+# Az 5 perces ütemezés csak tartalék, ha a lánc megszakadna.
 on:
   schedule:
     - cron: '*/5 * * * *'
@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: friss
@@ -17,7 +18,7 @@ concurrency:
 jobs:
   friss:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,11 +31,12 @@ jobs:
           path: seen.json
           key: seen-${{ github.run_id }}
           restore-keys: seen-
-      - name: Hírek és árfolyamok percenként (kb. 4,5 percig)
+      - name: Hírek és árfolyamok percenként (kb. 25 percig)
         env:
           PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
           GH_TOKEN: ${{ github.token }}
           APP_URL: https://${{ github.repository_owner }}.github.io/
+          FUTASI_PERC: '25'
         run: node friss.js
       - name: Látott hírek mentése
         if: always()
@@ -42,3 +44,8 @@ jobs:
         with:
           path: seen.json
           key: seen-${{ github.run_id }}
+      - name: Következő futás indítása
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run friss.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}" || echo "Nem sikerült – az ütemező indítja újra."
