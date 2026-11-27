@@ -1,0 +1,9 @@
+{
+  "name": "hirapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Napi politikai és tőzsdei hírösszefoglaló alkalmazás (PWA)",
+  "scripts": { "reggel": "node gen.js reggel", "este": "node gen.js este" },
+  "dependencies": { "web-push": "^3.6.7" },
+  "engines": { "node": ">=20" }
+}

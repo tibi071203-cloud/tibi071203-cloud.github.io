@@ -1,0 +1,86 @@
+name: Hírek frissítése
+
+on:
+  schedule:
+    # UTC idő! Budapest 7:00 / 18:00 = télen 6:00 / 17:00 UTC, nyáron 5:00 / 16:00 UTC.
+    # Mindkettő be van állítva, a program a budapesti óra alapján dönti el, hogy most kell-e futnia.
+    - cron: '0 5,6,16,17 * * *'
+  workflow_dispatch:
+    inputs:
+      tipus:
+        description: 'Mit készítsen most? (reggel / este)'
+        required: true
+        default: 'reggel'
+  push:
+    branches: [main]
+    paths-ignore: ['data/**']
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: hirek
+  cancel-in-progress: false
+
+jobs:
+  frissites:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      kesz: ${{ steps.gen.outputs.kesz }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Összefoglaló készítése
+        id: gen
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          KENYSZER: ${{ github.event.inputs.tipus }}
+          NO_PUSH: '1'
+        run: node gen.js auto
+      - name: Mentés
+        if: steps.gen.outputs.kesz == '1'
+        run: |
+          git config user.name "hirapp-bot"
+          git config user.email "hirapp-bot@users.noreply.github.com"
+          git add data || true
+          git commit -m "Hírek: $(date -u +%Y-%m-%dT%H:%M)" || echo "Nincs változás"
+          git push
+
+  kozzetetel:
+    needs: frissites
+    if: always() && (github.event_name == 'push' || needs.frissites.outputs.kesz == '1')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deploy
+        uses: actions/deploy-pages@v4
+      - uses: actions/setup-node@v4
+        if: github.event_name != 'push'
+        with:
+          node-version: '22'
+      - name: Értesítés a telefonra
+        if: github.event_name != 'push'
+        env:
+          PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
+          APP_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          npm install --no-audit --no-fund
+          sleep 20
+          node gen.js push

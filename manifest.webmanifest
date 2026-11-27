@@ -1,0 +1,35 @@
+{
+  "id": "./",
+  "name": "Napi Hírek",
+  "short_name": "Napi Hírek",
+  "description": "Napi politikai és tőzsdei hírösszefoglaló",
+  "lang": "hu",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1426",
+  "theme_color": "#0d1a33",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "categories": [
+    "news",
+    "finance"
+  ]
+}
