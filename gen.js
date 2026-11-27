@@ -28,7 +28,7 @@ const FEEDS = {
 };
 const QUOTES = [
   ['BUX', '^BUX.BD', 'hu'], ['OTP', 'OTP.BD', 'hu'], ['MOL', 'MOL.BD', 'hu'], ['Richter', 'RICHT.BD', 'hu'], ['Magyar Telekom', 'MTELEKOM.BD', 'hu'],
-  ['EUR/HUF', 'EURHUF=X', 'fx'], ['USD/HUF', 'USDHUF=X', 'fx'],
+  ['EUR/HUF', 'EURHUF=X', 'fx'], ['USD/HUF', 'USDHUF=X', 'fx'], ['GBP/HUF', 'GBPHUF=X', 'fx'], ['CHF/HUF', 'CHFHUF=X', 'fx'],
   ['S&P 500', '^GSPC', 'w'], ['Nasdaq', '^IXIC', 'w'], ['Dow Jones', '^DJI', 'w'], ['DAX', '^GDAXI', 'w'],
   ['Brent olaj', 'BZ=F', 'c'], ['Arany', 'GC=F', 'c'], ['Bitcoin', 'BTC-USD', 'c'],
 ];
@@ -70,16 +70,17 @@ async function readFeeds(list, hours) {
   res.forEach((r, i) => { if (r.status === 'fulfilled') out.push(...r.value); else console.warn('Forrás hiba:', list[i][0], r.reason && r.reason.message); });
   return out.filter((it) => { const k = it.title.toLowerCase().slice(0, 60); if (seen.has(k)) return false; seen.add(k); return true; });
 }
-async function readQuotes() {
-  const res = await Promise.allSettled(QUOTES.map(async ([name, sym, grp]) => {
+async function readQuotes(extra = []) {   // extra: a figyelőlistás szimbólumok [név, szimbólum, 'wl']
+  const list = QUOTES.concat(extra);
+  const res = await Promise.allSettled(list.map(async ([name, sym, grp]) => {
     const r = await get('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?range=1mo&interval=1d');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const res0 = (await r.json()).chart.result[0], m = res0.meta;
     const closes = (res0.indicators.quote[0].close || []).filter((x) => x != null);
     const ref = closes.length >= 2 ? closes[closes.length - 2] : m.chartPreviousClose;
-    return { name, grp, price: m.regularMarketPrice, chg: ref ? (m.regularMarketPrice / ref - 1) * 100 : null, unit: sym.startsWith('^') ? 'pont' : (grp === 'fx' ? 'Ft' : m.currency || ''), spark: closes.slice(-20).map((x) => +x.toFixed(4)) };
+    return { name, sym, grp, price: m.regularMarketPrice, chg: ref ? (m.regularMarketPrice / ref - 1) * 100 : null, unit: sym.startsWith('^') ? 'pont' : (grp === 'fx' ? 'Ft' : m.currency || ''), spark: closes.slice(-20).map((x) => +x.toFixed(4)) };
   }));
-  return res.map((r, i) => (r.status === 'fulfilled' ? r.value : (console.warn('Árfolyam hiba:', QUOTES[i][0], r.reason && r.reason.message), null))).filter(Boolean);
+  return res.map((r, i) => (r.status === 'fulfilled' ? r.value : (console.warn('Árfolyam hiba:', list[i][0], r.reason && r.reason.message), null))).filter(Boolean);
 }
 
 // ---------- Összefoglaló ----------
@@ -164,6 +165,15 @@ function pushConfigs() {
   try { const raw = (process.env.PUSH_CONFIG || '').trim(); if (!raw) return []; const j = JSON.parse(raw); return Array.isArray(j) ? j : [j]; }
   catch (e) { console.warn('PUSH_CONFIG nem érvényes JSON:', e.message); return []; }
 }
+async function sendPushDevice(c, payloads, ttl = 3600) {
+  let webpush; try { webpush = require('web-push'); } catch (e) { console.warn('A web-push csomag hiányzik (npm install).'); return 0; }
+  let n = 0;
+  for (const pl of payloads) {
+    try { webpush.setVapidDetails('mailto:hirapp@example.com', c.vapidPublic, c.vapidPrivate); await webpush.sendNotification(c.sub, JSON.stringify(pl), { TTL: ttl, urgency: 'high' }); n++; }
+    catch (e) { console.warn('Értesítés hiba:', e.statusCode || '', e.body || e.message); }
+  }
+  return n;
+}
 async function sendPush(payloads, ttl = 3600) {
   const cfgs = pushConfigs(); if (!cfgs.length) { console.log('Nincs beállítva értesítés (PUSH_CONFIG).'); return 0; }
   let webpush; try { webpush = require('web-push'); } catch (e) { console.warn('A web-push csomag hiányzik (npm install).'); return 0; }
@@ -182,7 +192,10 @@ async function notify(doc) {
   if (!cfgs.length) { console.log('Nincs beállítva értesítés (PUSH_CONFIG).'); return; }
   let webpush; try { webpush = require('web-push'); } catch (e) { console.warn('A web-push csomag hiányzik (npm install).'); return; }
   const payload = JSON.stringify({ title: (doc.kind === 'reggel' ? '☀️ Reggeli hírek' : '🌙 Esti hírek'), body: doc.headline || 'Megérkezett a friss összefoglaló.', url: process.env.APP_URL || './', tag: doc.id });
+  const B = require('./beallitas.js'), settings = await B.loadAll(cfgs, get);
   for (const c of cfgs) {
+    const st = settings.get(B.deviceId(c));
+    if (st && (!st.summary || B.inQuiet(st))) { console.log('Összefoglaló értesítés kikapcsolva/csendes idő ezen a készüléken.'); continue; }
     try {
       webpush.setVapidDetails('mailto:hirapp@example.com', c.vapidPublic, c.vapidPrivate);
       await webpush.sendNotification(c.sub, payload, { TTL: 6 * 3600 });
@@ -192,7 +205,7 @@ async function notify(doc) {
 }
 
 const bpHour = () => +new Date().toLocaleString('en-GB', { timeZone: TZ, hour: '2-digit', hour12: false }).slice(0, 2);
-module.exports = { FEEDS, SECTIONS, readFeeds, sendPush, get };
+module.exports = { FEEDS, SECTIONS, QUOTES, readFeeds, readQuotes, sendPush, sendPushDevice, pushConfigs, get };
 if (require.main === module) (async () => {
   let mode = (process.argv[2] || 'auto').toLowerCase();
   if (mode === 'auto') {
