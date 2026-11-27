@@ -56,7 +56,8 @@ function parseFeed(xml, source) {
     const title = decode(tag(b, 'title')); if (!title) continue;
     let link = decode(tag(b, 'link')); if (!link) { const m = b.match(/<link[^>]*href="([^"]+)"/i); if (m) link = m[1]; }
     const ds = decode(tag(b, 'pubDate') || tag(b, 'updated') || tag(b, 'published') || tag(b, 'dc:date')), d = ds ? new Date(ds) : null;
-    out.push({ source, title, link, date: d && !isNaN(d) ? d.toISOString() : null, desc: decode(tag(b, 'description') || tag(b, 'summary')).slice(0, 260) });
+    const cats = (b.match(/<category[^>]*>([\s\S]*?)<\/category>/gi) || []).map((c) => decode(c).toLowerCase());
+    out.push({ source, title, link, cats, date: d && !isNaN(d) ? d.toISOString() : null, desc: decode(tag(b, 'description') || tag(b, 'summary')).slice(0, 260) });
   }
   return out;
 }
