@@ -22,7 +22,7 @@ const DATA = path.join(__dirname, 'data');
 // A magyar politikához kormányközeli és független lapok is szerepelnek a kiegyensúlyozottság miatt.
 const FEEDS = {
   hu_pol: [['Telex', 'https://telex.hu/rss'], ['HVG', 'https://hvg.hu/rss'], ['Index', 'https://index.hu/24ora/rss/'], ['444', 'https://444.hu/feed'], ['Magyar Nemzet', 'https://magyarnemzet.hu/feed/'], ['Mandiner', 'https://mandiner.hu/rss']],
-  world: [['BBC World', 'https://feeds.bbci.co.uk/news/world/rss.xml'], ['The Guardian', 'https://www.theguardian.com/world/rss'], ['Euronews', 'https://www.euronews.com/rss?level=theme&name=news']],
+  world: [['BBC World', 'https://feeds.bbci.co.uk/news/world/rss.xml'], ['NPR World', 'https://feeds.npr.org/1004/rss.xml'], ['Euronews', 'https://www.euronews.com/rss?level=theme&name=news']],
   hu_mkt: [['Portfolio', 'https://www.portfolio.hu/rss/all.xml']],
   w_mkt: [['BBC Business', 'https://feeds.bbci.co.uk/news/business/rss.xml'], ['CNBC', 'https://www.cnbc.com/id/100003114/device/rss/rss.html']],
 };

@@ -541,7 +541,7 @@ async function enablePush() {
 // ÚJ FUNKCIÓK: beállítások + szinkron, szűrők, csendes idő, kulcsszavak, árfolyam-riasztás, figyelőlista,
 // lapok összehasonlítása, keresés, mentett hírek, pénzváltó, gazdasági naptár
 // =====================================================================
-const SOURCES = ['Telex', 'HVG', 'Index', '444', 'Magyar Nemzet', 'Mandiner', 'BBC World', 'The Guardian', 'Euronews', 'Portfolio', 'BBC Business', 'CNBC'];
+const SOURCES = ['Telex', 'HVG', 'Index', '444', 'Magyar Nemzet', 'Mandiner', 'BBC World', 'NPR World', 'Euronews', 'Portfolio', 'BBC Business', 'CNBC'];
 const DEF = { v: 1, newsNotif: true, summary: true, sections: { hu_pol: true, world: true, hu_mkt: true, w_mkt: true }, sources: {}, quiet: { on: false, from: 23, to: 7 }, keywords: [], watch: [], alerts: [] };
 let S = (() => { try { const o = JSON.parse(localStorage.getItem('hirapp-settings') || 'null'); return o ? { ...DEF, ...o, sections: { ...DEF.sections, ...(o.sections || {}) }, quiet: { ...DEF.quiet, ...(o.quiet || {}) } } : JSON.parse(JSON.stringify(DEF)); } catch (e) { return JSON.parse(JSON.stringify(DEF)); } })();
 let frissMode = 'list';
