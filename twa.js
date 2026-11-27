@@ -21,7 +21,7 @@ const m = {
   appVersionName: String(ver), appVersionCode: Number(ver) || 1,
   shortcuts: [], generatorApp: 'bubblewrap-cli', fallbackType: 'customtabs', features: {},
   alphaDependencies: { enabled: false }, enableSiteSettingsShortcut: true, isChromeOSOnly: false, isMetaQuest: false,
-  fullScopeUrl: 'https://' + host + base, minSdkVersion: 21,
+  fullScopeUrl: 'https://' + host + base, minSdkVersion: 24,
 };
 fs.mkdirSync('build-android', { recursive: true });
 fs.writeFileSync('build-android/twa-manifest.json', JSON.stringify(m, null, 2));
