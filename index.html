@@ -416,7 +416,24 @@ fetch('napi-hirek.apk', { method: 'HEAD' }).then((r) => { if (r.ok && /android|v
 // „Letöltés” sáv: ingyenes telepítés Androidra (Chrome telepítés vagy APK fájl)
 function showGetApp() {
   const el = $('#getApp');
-  if (standalone() || localStorage.getItem('hirapp-hide-get') === '1') { el.style.display = 'none'; return; }
+  // telepített alkalmazásban: ha még nincs bekapcsolva az értesítés, arra hívjuk fel a figyelmet
+  if (standalone()) {
+    if ('Notification' in window && 'PushManager' in window && Notification.permission === 'default' && localStorage.getItem('hirapp-hide-notif') !== '1') {
+      el.innerHTML = '<img src="icon-192.png" alt=""><div class="t"><b>🔔 Értesítések</b>Kapcsold be, hogy szóljon az új hírekről</div><button id="gaNotif">Bekapcsol</button><button class="x" id="gaX" aria-label="Bezárás">✕</button>';
+      el.style.display = 'flex';
+      $('#gaNotif').onclick = async () => { el.style.display = 'none'; await enablePush(); openSettings(); };
+      $('#gaX').onclick = () => { el.style.display = 'none'; localStorage.setItem('hirapp-hide-notif', '1'); };
+    } else el.style.display = 'none';
+    return;
+  }
+  if (localStorage.getItem('hirapp-hide-get') === '1') { el.style.display = 'none'; return; }
+  if (isIOS()) {   // iPhone/iPad: nincs telepítés gomb, a Megosztás menüből kell a kezdőképernyőre tenni
+    el.innerHTML = '<img src="icon-192.png" alt=""><div class="t"><b>Telepítsd iPhone-ra</b>Megosztás □↑ → Főképernyőhöz adás</div><button id="gaIos">Hogyan?</button><button class="x" id="gaX" aria-label="Bezárás">✕</button>';
+    el.style.display = 'flex';
+    $('#gaIos').onclick = () => openSettings();
+    $('#gaX').onclick = () => { el.style.display = 'none'; localStorage.setItem('hirapp-hide-get', '1'); };
+    return;
+  }
   if (deferredInstall) {
     el.innerHTML = '<img src="icon-192.png" alt=""><div class="t"><b>Napi Hírek alkalmazás</b>Ingyenes · értesítésekkel</div><button id="gaInst">Telepítés</button><button class="x" id="gaX" aria-label="Bezárás">✕</button>';
     $('#gaInst').onclick = async () => { deferredInstall.prompt(); const c = await deferredInstall.userChoice; if (c.outcome === 'accepted') el.style.display = 'none'; deferredInstall = null; };
@@ -434,7 +451,7 @@ function openSettings() {
   if (standalone()) ih = '<p style="color:var(--up);font-weight:600;margin:0">✓ Az alkalmazás telepítve van.</p>';
   else if (deferredInstall) ih = '<button class="btn" id="doInstall">📲 Alkalmazás telepítése (ingyenes)</button>' + (apkUrl ? '<a class="btn sec2" style="display:block;text-align:center;text-decoration:none" href="' + apkUrl + '" download>⬇️ Android APK letöltése</a>' : '');
   else if (isAndroid() && apkUrl) ih = '<a class="btn" style="display:block;text-align:center;text-decoration:none" href="' + apkUrl + '" download>⬇️ Android-alkalmazás letöltése (APK)</a><p style="color:var(--tx2);font-size:13px">Letöltés után nyisd meg a fájlt, és engedélyezd a telepítést (Ismeretlen forrásból származó alkalmazások).</p>';
-  else if (isIOS()) ih = '<h4 style="margin:0 0 6px">📲 Telepítés iPhone-ra</h4><ol class="steps"><li>Nyisd meg ezt az oldalt <b>Safariban</b>.</li><li>Koppints a <b>Megosztás</b> gombra (négyzet felfelé nyíllal).</li><li>Válaszd: <b>Főképernyőhöz adás</b>.</li><li>Ezután a kezdőképernyőről indítsd – az értesítések csak így működnek iPhone-on.</li></ol>';
+  else if (isIOS()) ih = '<h4 style="margin:0 0 6px">📲 Telepítés iPhone-ra (ingyenes, 30 mp)</h4><ol class="steps"><li>Nyisd meg ezt az oldalt <b>Safariban</b> (iOS 16.4-től Chrome-ban is megy).</li><li>Koppints a <b>Megosztás</b> gombra: Safariban alul középen, egy négyzet felfelé mutató nyíllal (□↑). Ha nem látod, görgess kicsit felfelé, vagy koppints a <b>•••</b> gombra.</li><li>Görgess le a menüben, és válaszd: <b>Főképernyőhöz adás</b> (Add to Home Screen).</li><li>Jobb fent: <b>Hozzáadás</b>.</li><li>Ezután mindig a <b>kezdőképernyőn lévő ikonról</b> indítsd – az értesítések csak így működnek iPhone-on (iOS 16.4 vagy újabb kell).</li></ol>';
   else ih = '<h4 style="margin:0 0 6px">📲 Telepítés</h4><ol class="steps"><li>Nyisd meg a böngésző menüjét (⋮).</li><li>Válaszd: <b>Alkalmazás telepítése</b> vagy <b>Hozzáadás a kezdőképernyőhöz</b>.</li></ol>';
   $('#installBox').innerHTML = ih;
   const di = $('#doInstall'); if (di) di.onclick = async () => { deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; openSettings(); };
@@ -964,7 +981,7 @@ document.addEventListener('click', (e) => {
 });
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW:', e));
-load().then(() => { pollLive(true); pollBtc(); pollFriss(true); });
+load().then(() => { pollLive(true); pollBtc(); pollFriss(true); setTimeout(showGetApp, 800); });
 </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 # Napi Hírek – alkalmazás a telefonodra
 
+> 🍎 **iPhone / iPad:** Safariban nyisd meg a címet → Megosztás □↑ → Főképernyőhöz adás – részletek: [IPHONE.md](IPHONE.md)
 > 📱 **Letölthető Android-alkalmazás (APK):** feltöltés után magától elkészül, és itt lesz: `https://FELHASZNÁLÓNEVED.github.io/napi-hirek.apk` – részletek: [ANDROID.md](ANDROID.md)
 
 Saját hírösszefoglaló alkalmazás, amit a telefon kezdőképernyőjére telepítesz (Android és iPhone).

@@ -220,6 +220,11 @@ function save(doc) {
   fs.writeFileSync(path.join(DATA, 'index.json'), JSON.stringify(idx));
 }
 
+// Az Apple (iPhone) szigorúan ellenőrzi a feladó azonosítóját: valódi https címet adunk meg (az alkalmazás címét)
+function vapidSubject() {
+  const u = process.env.APP_URL || (process.env.GITHUB_REPOSITORY_OWNER ? 'https://' + process.env.GITHUB_REPOSITORY_OWNER.toLowerCase() + '.github.io' : '');
+  return /^https:\/\//.test(u) ? u.replace(/\/+$/, '') : 'mailto:hirapp@example.com';
+}
 // Értesítés küldése minden beállított készülékre (PUSH_CONFIG)
 function pushConfigs() {
   try { const raw = (process.env.PUSH_CONFIG || '').trim(); if (!raw) return []; const j = JSON.parse(raw); return Array.isArray(j) ? j : [j]; }
@@ -229,7 +234,7 @@ async function sendPushDevice(c, payloads, ttl = 3600) {
   let webpush; try { webpush = require('web-push'); } catch (e) { console.warn('A web-push csomag hiányzik (npm install).'); return 0; }
   let n = 0;
   for (const pl of payloads) {
-    try { webpush.setVapidDetails('mailto:hirapp@example.com', c.vapidPublic, c.vapidPrivate); await webpush.sendNotification(c.sub, JSON.stringify(pl), { TTL: ttl, urgency: 'high' }); n++; }
+    try { webpush.setVapidDetails(vapidSubject(), c.vapidPublic, c.vapidPrivate); await webpush.sendNotification(c.sub, JSON.stringify(pl), { TTL: ttl, urgency: 'high' }); n++; }
     catch (e) { console.warn('Értesítés hiba:', e.statusCode || '', e.body || e.message); }
   }
   return n;
@@ -239,7 +244,7 @@ async function sendPush(payloads, ttl = 3600) {
   let webpush; try { webpush = require('web-push'); } catch (e) { console.warn('A web-push csomag hiányzik (npm install).'); return 0; }
   let n = 0;
   for (const c of cfgs) for (const pl of payloads) {
-    try { webpush.setVapidDetails('mailto:hirapp@example.com', c.vapidPublic, c.vapidPrivate); await webpush.sendNotification(c.sub, JSON.stringify(pl), { TTL: ttl, urgency: 'high' }); n++; }
+    try { webpush.setVapidDetails(vapidSubject(), c.vapidPublic, c.vapidPrivate); await webpush.sendNotification(c.sub, JSON.stringify(pl), { TTL: ttl, urgency: 'high' }); n++; }
     catch (e) { console.warn('Értesítés hiba:', e.statusCode || '', e.body || e.message); }
   }
   return n;
@@ -257,7 +262,7 @@ async function notify(doc) {
     const st = settings.get(B.deviceId(c));
     if (st && (!st.summary || B.inQuiet(st))) { console.log('Összefoglaló értesítés kikapcsolva/csendes idő ezen a készüléken.'); continue; }
     try {
-      webpush.setVapidDetails('mailto:hirapp@example.com', c.vapidPublic, c.vapidPrivate);
+      webpush.setVapidDetails(vapidSubject(), c.vapidPublic, c.vapidPrivate);
       await webpush.sendNotification(c.sub, payload, { TTL: 6 * 3600 });
       console.log('Értesítés elküldve.');
     } catch (e) { console.warn('Értesítés hiba:', e.statusCode || '', e.body || e.message); }
