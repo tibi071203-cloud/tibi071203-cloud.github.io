@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.tibi071203_cloud.napihirek",
+      "sha256_cert_fingerprints": [
+        "01:51:42:62:40:E9:86:B1:AF:17:7F:7B:8C:B9:5C:B3:2A:11:DD:7D:14:8B:00:80:74:53:81:EF:25:EB:AE:41"
+      ]
+    }
+  }
+]
