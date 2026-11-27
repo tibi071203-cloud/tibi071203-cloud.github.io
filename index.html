@@ -15,7 +15,8 @@
 <meta name="apple-mobile-web-app-title" content="Napi Hírek">
 <style>
 :root{--bg:#0b1426;--bg2:#111d35;--card:#15223d;--line:#22335a;--tx:#eaf0fb;--tx2:#9fb0cf;--acc:#4da3ff;--up:#2ecc71;--down:#ff5d5d;--flat:#a8b3c7;--r:16px}
-@media (prefers-color-scheme: light){:root{--bg:#f2f5fa;--bg2:#fff;--card:#fff;--line:#dde4ef;--tx:#0f1b2e;--tx2:#5a6a85;--acc:#1f6fe0;--up:#14924a;--down:#d63031}}
+@media (prefers-color-scheme: light){:root:not([data-theme=dark]){--bg:#f2f5fa;--bg2:#fff;--card:#fff;--line:#dde4ef;--tx:#0f1b2e;--tx2:#5a6a85;--acc:#1f6fe0;--up:#14924a;--down:#d63031}}
+:root[data-theme=light]{--bg:#f2f5fa;--bg2:#fff;--card:#fff;--line:#dde4ef;--tx:#0f1b2e;--tx2:#5a6a85;--acc:#1f6fe0;--up:#14924a;--down:#d63031}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
@@ -137,6 +138,37 @@ h4.st{margin:16px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.
 .cal small{color:var(--tx2)}
 .conv{font-size:28px;font-weight:800;text-align:center;margin:10px 0;font-variant-numeric:tabular-nums}
 mark{background:color-mix(in srgb,#f5b301 45%,transparent);color:inherit;border-radius:3px}
+
+.q{cursor:pointer}
+.chartbox{position:relative;margin:6px 0 2px;touch-action:none}
+.chartbox svg{width:100%;height:230px;display:block}
+.chinfo{display:flex;justify-content:space-between;align-items:baseline;margin:4px 0}
+.chinfo b{font-size:24px;font-variant-numeric:tabular-nums}
+.chinfo span{font-size:13px;color:var(--tx2)}
+.pf{background:linear-gradient(135deg,#14532f,#1f7a46);color:#fff;border-radius:var(--r);padding:14px 16px;margin-bottom:14px;cursor:pointer}
+.pf small{opacity:.85;font-weight:700;font-size:11px;letter-spacing:.6px;text-transform:uppercase}
+.pf .v{font-size:26px;font-weight:800;margin:2px 0;font-variant-numeric:tabular-nums}
+.pf .d{font-size:14px;font-weight:700}
+.mac{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.mac:first-child{border-top:0}
+.mac .g{flex:1}.mac .g small{color:var(--tx2);display:block;font-size:12px}
+.mac .v{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.mac svg{width:90px;height:34px;flex:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;margin:6px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+table.pt2{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+table.pt2 th,table.pt2 td{padding:6px 4px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+table.pt2 th:first-child,table.pt2 td:first-child{text-align:left;white-space:normal}
+.tts{display:flex;gap:8px;margin:-4px 0 12px}
+.tts button{flex:1}
+.wk{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;cursor:pointer}
+.wk span{font-size:26px}.wk b{display:block}.wk small{color:var(--tx2)}
+.qz{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--bg)}
+.qz p{margin:0 0 8px;font-weight:650}
+.qz button{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:10px;padding:10px;margin:6px 0;font:15px system-ui;cursor:pointer}
+.qz button.ok{border-color:var(--up);background:color-mix(in srgb,var(--up) 18%,var(--card))}
+.qz button.bad{border-color:var(--down);background:color-mix(in srgb,var(--down) 18%,var(--card))}
+.qz .ex{font-size:13px;color:var(--tx2);margin-top:6px}
+.fi .shr{border:0;background:none;font-size:17px;cursor:pointer;color:var(--tx2);padding:0 2px;align-self:flex-start}
 #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111c;color:#fff;padding:8px 14px;border-radius:10px;font-size:14px;z-index:60;display:none}
 .skel{height:14px;border-radius:7px;background:linear-gradient(90deg,var(--line),var(--card),var(--line));background-size:200% 100%;animation:sh 1.2s infinite;margin:10px 0}
 @keyframes sh{to{background-position:-200% 0}}
@@ -221,7 +253,7 @@ function render() {
   if (!doc) return;
   const d = new Date(doc.created);
   const when = d.toLocaleString('hu-HU', { month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
-  $('#meta').innerHTML = (doc.kind === 'reggel' ? '☀️ Reggeli' : '🌙 Esti') + ' összefoglaló · ' + esc(when) + (doc.ai ? ' <span class="pill ai">AI összefoglaló</span>' : ' <span class="pill">címválogatás</span>') + (viewingArchive ? ' <span class="pill" style="cursor:pointer" id="backLatest">archív · vissza a legfrissebbhez</span>' : '');
+  $('#meta').innerHTML = (doc.kind === 'het' ? '📅 Heti' : doc.kind === 'reggel' ? '☀️ Reggeli' : '🌙 Esti') + ' összefoglaló · ' + esc(when) + (doc.ai ? ' <span class="pill ai">AI összefoglaló</span>' : ' <span class="pill">címválogatás</span>') + (viewingArchive ? ' <span class="pill" style="cursor:pointer" id="backLatest">archív · vissza a legfrissebbhez</span>' : '');
   const bl = $('#backLatest'); if (bl) bl.onclick = () => load();
   // fülek
   const tabs = view === 'news' ? [['all', 'Mind']].concat(SECTIONS.map((s) => [s[0], s[3]])) : [];
@@ -229,7 +261,9 @@ function render() {
   $('#tabs').style.display = tabs.length ? 'flex' : 'none';
   let h = '';
   if (view === 'news') {
-    if (doc.headline && tab === 'all') h += '<div class="hero"><small>A nap híre</small><p>' + esc(doc.headline) + '</p></div>';
+    if (doc.headline && tab === 'all') h += '<div class="hero"><small>' + (doc.kind === 'het' ? 'A hét híre' : 'A nap híre') + '</small><p>' + esc(doc.headline) + '</p></div>';
+    if (tab === 'all') h += '<div class="tts"><button class="btn sec2" id="ttsBtn">' + (speaking ? '⏹️ Felolvasás leállítása' : '🔊 Felolvasás') + '</button><button class="btn sec2" id="shareSum" style="flex:none;width:auto">📤</button></div>';
+    if (tab === 'all' && weekly && !viewingArchive && Date.now() - Date.parse(weekly.created) < 4 * 86400e3) h += '<div class="wk" id="wkOpen"><span>📅</span><div><b>Heti összefoglaló</b><small>' + esc(weekly.headline || 'A hét legfontosabb eseményei') + '</small></div></div>';
     for (const [k, ic, title] of SECTIONS) {
       if (tab !== 'all' && tab !== k) continue;
       const pts = (doc.sections && doc.sections[k]) || [];
@@ -249,7 +283,7 @@ function render() {
   } else if (view === 'saved') {
     h += '<section class="sec"><h2>🔖 Mentett hírek</h2><div id="savedList">' + savedHTML() + '</div></section>';
   } else if (view === 'quotes') {
-    h += '<section class="sec"><h2>📈 Árfolyamok</h2>' + (curQuotes().length ? '<div class="qwrap" data-g="wl,hu,fx,w,c">' + quotesHTML(QGRP.map((g) => g[0])) + '</div>' : '<p style="color:var(--tx2)">Most nincs árfolyamadat.</p>') + '<p class="note" style="margin-bottom:4px">Napi változás az előző záráshoz képest · grafikon: utolsó ~20 nap<br>A tőzsdei árak kb. percenként frissülnek (a Budapesti Értéktőzsde adatai a forrásnál további ~15 percet késhetnek), a bitcoin élő.</p></section>';
+    h += portfolioCard() + '<section class="sec"><h2>📈 Árfolyamok</h2><p class="note" style="margin:0 0 4px;text-align:left">Koppints egy árfolyamra a részletes grafikonért.</p>' + (curQuotes().length ? '<div class="qwrap" data-g="wl,hu,fx,w,c">' + quotesHTML(QGRP.map((g) => g[0])) + '</div>' : '<p style="color:var(--tx2)">Most nincs árfolyamadat.</p>') + '<p class="note" style="margin-bottom:4px">Napi változás az előző záráshoz képest · grafikon: utolsó ~20 nap<br>A tőzsdei árak kb. percenként frissülnek (a Budapesti Értéktőzsde adatai a forrásnál további ~15 percet késhetnek), a bitcoin élő.</p></section>';
   }
   h += '<p class="note">Tájékoztató jellegű összefoglaló, nem befektetési tanács.</p>';
   $('#main').innerHTML = h;
@@ -259,7 +293,7 @@ function quotesHTML(groups) {
   for (const [g, t] of QGRP) {
     if (!groups.includes(g)) continue;
     const rows = curQuotes().filter((q) => q.grp === g); if (!rows.length) continue;
-    h += '<div class="qgrp">' + t + '</div><div class="qgrid">' + rows.map((q) => { const c = chgCls(q.chg); return '<div class="q' + (flash[q.name] ? ' flash-' + flash[q.name] : '') + '"><div class="n">' + esc(q.name) + '</div><div class="p">' + fmt(q.price) + ' <small>' + esc(q.unit || '') + '</small></div><div class="c ' + c + '">' + chgTxt(q.chg) + '</div>' + spark(q.spark, c) + '</div>'; }).join('') + '</div>';
+    h += '<div class="qgrp">' + t + '</div><div class="qgrid">' + rows.map((q) => { const c = chgCls(q.chg); return '<div class="q' + (flash[q.name] ? ' flash-' + flash[q.name] : '') + '" data-sym="' + esc(q.sym || '') + '" data-name="' + esc(q.name) + '" role="button"><div class="n">' + esc(q.name) + '</div><div class="p">' + fmt(q.price) + ' <small>' + esc(q.unit || '') + '</small></div><div class="c ' + c + '">' + chgTxt(q.chg) + '</div>' + spark(q.spark, c) + '</div>'; }).join('') + '</div>';
   }
   return h;
 }
@@ -360,7 +394,7 @@ async function openArchive() {
   $('#sArchive').classList.add('open'); $('#archList').innerHTML = '<div class="skel"></div><div class="skel"></div>';
   try {
     const idx = await getJSON('data/index.json');
-    $('#archList').innerHTML = idx.map((x) => { const d = new Date(x.date + 'T12:00:00'); return '<button class="arch" data-id="' + esc(x.id) + '"><b>' + (x.kind === 'reggel' ? '☀️ ' : '🌙 ') + esc(d.toLocaleDateString('hu-HU', { month: 'long', day: 'numeric', weekday: 'long' })) + ' – ' + (x.kind === 'reggel' ? 'reggel' : 'este') + '</b><span>' + esc(x.headline || '') + '</span></button>'; }).join('') || '<p style="color:var(--tx2)">Még üres.</p>';
+    $('#archList').innerHTML = idx.map((x) => { const d = new Date(x.date + 'T12:00:00'); return '<button class="arch" data-id="' + esc(x.id) + '"><b>' + (x.kind === 'het' ? '📅 ' : x.kind === 'reggel' ? '☀️ ' : '🌙 ') + esc(d.toLocaleDateString('hu-HU', { month: 'long', day: 'numeric', weekday: 'long' })) + ' – ' + (x.kind === 'het' ? 'heti összefoglaló' : x.kind === 'reggel' ? 'reggel' : 'este') + '</b><span>' + esc(x.headline || '') + '</span></button>'; }).join('') || '<p style="color:var(--tx2)">Még üres.</p>';
   } catch (e) { $('#archList').innerHTML = '<p style="color:var(--tx2)">Nem sikerült betölteni.</p>'; }
 }
 $('#archList').addEventListener('click', (e) => { const b = e.target.closest('.arch'); if (!b) return; $('#sArchive').classList.remove('open'); view = 'news'; tab = 'all'; document.querySelectorAll('.bar button').forEach((x) => x.classList.toggle('on', x.dataset.v === 'news')); load(b.dataset.id); scrollTo({ top: 0 }); });
@@ -502,8 +536,10 @@ async function syncSettings() {
 
 // ---------- „Több” menü és panelek ----------
 const TILES = [
+  ['pf', '💼', 'Portfólióm'], ['macro', '🇭🇺', 'Gazdasági mutatók'], ['polls', '🗳️', 'Közvélemény-kutatások'],
+  ['parl', '🏛️', 'Parlament'], ['quiz', '🧠', 'Napi kvíz'], ['cal', '📅', 'Gazdasági naptár'],
   ['notif', '🔔', 'Értesítések és szűrők'], ['kw', '🔑', 'Kulcsszavak'], ['alerts', '🚨', 'Árfolyam-riasztás'],
-  ['watch', '⭐', 'Figyelőlista'], ['conv', '💱', 'Pénzváltó'], ['cal', '📅', 'Gazdasági naptár'],
+  ['watch', '⭐', 'Figyelőlista'], ['conv', '💱', 'Pénzváltó'], ['look', '🔤', 'Megjelenés'],
   ['archive', '🗂️', 'Archívum'], ['sync', '☁️', 'Szinkronizálás'], ['setup', '📲', 'Telepítés, értesítés be'],
 ];
 function openMore() { $('#moreTiles').innerHTML = TILES.map(([k, ic, t]) => '<button class="tile" data-k="' + k + '"><span>' + ic + '</span>' + t + '</button>').join(''); $('#sMore').classList.add('open'); }
@@ -511,7 +547,7 @@ $('#moreTiles').addEventListener('click', (e) => { const b = e.target.closest('.
 function openPanel(k) {
   if (k === 'archive') return openArchive();
   if (k === 'setup') return openSettings();
-  const t = TILES.find((x) => x[0] === k); $('#panelTitle').textContent = t[1] + ' ' + t[2];
+  const t = TILES.find((x) => x[0] === k) || [k, '📈', 'Grafikon']; $('#panelTitle').textContent = t[1] + ' ' + t[2];
   $('#sPanel').classList.add('open'); $('#sPanel').dataset.k = k; renderPanel();
 }
 const syncLine = () => '<p class="syncst">' + esc(syncState || (ghToken() ? '' : 'A beállítások az értesítésekre csak a GitHub-kulcs megadása után hatnak (Több → Szinkronizálás).')) + '</p>';
@@ -541,7 +577,8 @@ function renderPanel() {
       '<div class="row" style="margin-top:8px"><input class="inp" id="wSym" placeholder="jelölés, pl. TSLA" autocapitalize="characters"><input class="inp" id="wName" placeholder="név, pl. Tesla"></div><button class="btn" id="wAdd">Hozzáadás</button>' +
       '<p style="color:var(--tx2);font-size:13px">Példák: <b>TSLA</b> Tesla · <b>AAPL</b> Apple · <b>NVDA</b> Nvidia · <b>MSFT</b> Microsoft · <b>OPUS.BD</b> Opus · <b>4IG.BD</b> 4iG · <b>RHM.DE</b> Rheinmetall · <b>EURUSD=X</b> euró/dollár · <b>ETH-USD</b> Ethereum. Jelölést a finance.yahoo.com keresőjében találsz.</p><h4 class="st">Figyelőlistád</h4>' +
       (S.watch.map((w, i) => { const q = curQuotes().find((x) => x.sym === w.sym); return '<div class="li"><div class="g">' + esc(w.name) + '<small>' + esc(w.sym) + (q ? ' · ' + fmt(q.price) + ' ' + esc(q.unit || '') : ' · adat még nincs') + '</small></div><button class="del" data-wdel="' + i + '">🗑️</button></div>'; }).join('') || '<p style="color:var(--tx2);font-size:14px">Még üres.</p>');
-  } else if (k === 'conv') { h += convHTML(); }
+  } else if (EXTRA_PANELS[k]) { h += EXTRA_PANELS[k](); }
+  else if (k === 'conv') { h += convHTML(); }
   else if (k === 'cal') { h += '<div id="calBox"><div class="skel"></div><div class="skel"></div></div>'; }
   else if (k === 'sync') {
     const ri = repoInfo();
@@ -553,6 +590,7 @@ function renderPanel() {
   el.innerHTML = h + (['notif', 'kw', 'alerts', 'watch'].includes(k) ? syncLine() : '');
   if (k === 'conv') updConv();
   if (k === 'cal') loadCal();
+  if (EXTRA_AFTER[k]) EXTRA_AFTER[k]();
 }
 $('#panelBody').addEventListener('change', (e) => {
   const t = e.target;
@@ -627,7 +665,7 @@ let saved = (() => { try { return JSON.parse(localStorage.getItem('hirapp-saved'
 const isSaved = (k) => saved.some((x) => x.k === k);
 function itemHTML(it) {
   const kw = kwHit(it.title + ' ' + (it.d || ''));
-  return '<div class="fi' + (Date.parse(it.t) > frissSeenAt && frissSeenAt ? ' uj' : '') + (kw ? ' kw' : '') + '"><div class="ic">' + (SEC_IC[it.sec] || '📰') + '</div><a class="lk" href="' + esc(it.link) + '" target="_blank" rel="noopener"><div class="m">' + (kw ? '<span class="kwb">🔔 ' + esc(kw) + '</span>' : '') + esc(it.source) + ' · ' + ago(it.t) + '</div><div class="tt">' + esc(it.title) + '</div></a><button class="star' + (isSaved(it.k) ? ' on' : '') + '" data-k="' + esc(it.k) + '" aria-label="Mentés">' + (isSaved(it.k) ? '★' : '☆') + '</button></div>';
+  return '<div class="fi' + (Date.parse(it.t) > frissSeenAt && frissSeenAt ? ' uj' : '') + (kw ? ' kw' : '') + '"><div class="ic">' + (SEC_IC[it.sec] || '📰') + '</div><a class="lk" href="' + esc(it.link) + '" target="_blank" rel="noopener"><div class="m">' + (kw ? '<span class="kwb">🔔 ' + esc(kw) + '</span>' : '') + esc(it.source) + ' · ' + ago(it.t) + '</div><div class="tt">' + esc(it.title) + '</div></a><button class="shr" data-share="' + esc(it.link) + '" data-title="' + esc(it.title) + '" aria-label="Megosztás">📤</button><button class="star' + (isSaved(it.k) ? ' on' : '') + '" data-k="' + esc(it.k) + '" aria-label="Mentés">' + (isSaved(it.k) ? '★' : '☆') + '</button></div>';
 }
 const STOPW = new Set('hogy mint utan elott miatt szerint kozott ellen alatt felett nincs lesz volt lett most meg mar csak akar ezert mert vagy illetve valamint amely amelyet akik aki ahol amikor mindig minden egyik masik with from that this have will been were their about after into over says said than more most what when which while'.split(' '));
 const toks = (t) => [...new Set(fold(t).replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((w) => w.length >= 4 && !STOPW.has(w)).map((w) => w.slice(0, 6)))];
@@ -677,6 +715,253 @@ $('#qres').addEventListener('click', (e) => { const b = e.target.closest('.arch'
 if (location.hash === '#arfolyamok') setTimeout(() => { const b = document.querySelector('.bar button[data-v=quotes]'); if (b) b.click(); }, 300);
 // ha van GitHub-kulcs, induláskor szinkronizálunk (pl. ha az értesítéseket időközben újra bekapcsolta)
 if (ghToken()) setTimeout(syncSettings, 4000);
+
+
+// =====================================================================
+// 2. KÖR: portfólió, részletes grafikon, gazdasági mutatók, közvélemény-kutatások, parlament,
+// felolvasás, heti összefoglaló, megosztás, megjelenés, napi kvíz
+// =====================================================================
+const rawFile = (name) => { const s = liveSource(); return s ? s.replace('quotes.json', name) : null; };
+const rawCache = {};
+async function getRaw(name, maxAge = 120e3) {
+  const c = rawCache[name]; if (c && Date.now() - c.t < maxAge) return c.d;
+  const u = rawFile(name); if (!u) throw new Error('nincs forrás');
+  const r = await fetch(u + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json(); rawCache[name] = { t: Date.now(), d }; return d;
+}
+const PALETTE = ['#4da3ff', '#f5a623', '#2ecc71', '#e056fd', '#ff5d5d', '#00cec9', '#a29bfe', '#fdcb6e', '#81ecec', '#fab1a0'];
+const EXTRA_PANELS = {}, EXTRA_AFTER = {};
+
+// ---------- Megjelenés: téma + betűméret ----------
+let LOOK = (() => { try { return { theme: 'auto', zoom: 1, ...JSON.parse(localStorage.getItem('hirapp-look') || '{}') }; } catch (e) { return { theme: 'auto', zoom: 1 }; } })();
+function applyLook() {
+  if (LOOK.theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', LOOK.theme);
+  document.body.style.zoom = LOOK.zoom;
+  const dark = LOOK.theme === 'dark' || (LOOK.theme === 'auto' && !matchMedia('(prefers-color-scheme: light)').matches);
+  document.querySelector('meta[name=theme-color]').setAttribute('content', dark ? '#0d1a33' : '#f2f5fa');
+}
+applyLook();
+EXTRA_PANELS.look = () => '<h4 class="st">Téma</h4><div class="seg" id="lkTheme">' + [['auto', 'Automatikus'], ['light', '☀️ Világos'], ['dark', '🌙 Sötét']].map(([v, t]) => '<button data-v="' + v + '" class="' + (LOOK.theme === v ? 'on' : '') + '">' + t + '</button>').join('') + '</div>' +
+  '<h4 class="st">Betűméret</h4><div class="seg" id="lkZoom">' + [[0.9, 'Kicsi'], [1, 'Normál'], [1.15, 'Nagy'], [1.3, 'Nagyon nagy']].map(([v, t]) => '<button data-v="' + v + '" class="' + (Math.abs(LOOK.zoom - v) < 0.01 ? 'on' : '') + '">' + t + '</button>').join('') + '</div>' +
+  '<p style="color:var(--tx2);font-size:14px">Minta: Az Országgyűlés elfogadta a jövő évi költségvetést.</p>';
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('#lkTheme button, #lkZoom button'); if (!b) return;
+  if (b.closest('#lkTheme')) LOOK.theme = b.dataset.v; else LOOK.zoom = +b.dataset.v;
+  localStorage.setItem('hirapp-look', JSON.stringify(LOOK)); applyLook(); renderPanel();
+});
+
+// ---------- Megosztás ----------
+async function shareIt(title, url) {
+  try { if (navigator.share) { await navigator.share({ title, text: title, url }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(title + (url ? '\n' + url : '')); toast('Kimásolva – beillesztheted bárhová'); } catch (e) { toast('A megosztás nem sikerült'); }
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-share]'); if (b) { e.preventDefault(); shareIt(b.dataset.title, b.dataset.share); return; }
+  if (e.target.closest('#shareSum') && doc) {
+    const txt = (doc.kind === 'het' ? '📅 Heti' : doc.kind === 'reggel' ? '☀️ Reggeli' : '🌙 Esti') + ' összefoglaló – Napi Hírek\n\n' + (doc.headline || '') + '\n\n' + SECTIONS.map(([k, ic, t]) => ((doc.sections || {})[k] || []).length ? ic + ' ' + t + '\n' + doc.sections[k].map((p) => '• ' + p.text).join('\n') : '').filter(Boolean).join('\n\n');
+    shareIt(txt, location.origin + location.pathname);
+  }
+});
+
+// ---------- Felolvasás ----------
+let speaking = false;
+function speakSummary() {
+  if (!('speechSynthesis' in window)) return toast('Ez a telefon nem támogatja a felolvasást');
+  if (speaking) { speechSynthesis.cancel(); speaking = false; render(); return; }
+  if (!doc) return;
+  const parts = [(doc.kind === 'het' ? 'Heti' : doc.kind === 'reggel' ? 'Reggeli' : 'Esti') + ' összefoglaló.', doc.headline || ''];
+  for (const [k, , t] of SECTIONS) { const pts = (doc.sections || {})[k] || []; if (pts.length) { parts.push(t + '.'); pts.forEach((p) => parts.push(p.text)); } }
+  const voices = speechSynthesis.getVoices(), hu = voices.find((v) => /^hu/i.test(v.lang));
+  speechSynthesis.cancel(); speaking = true;
+  parts.filter(Boolean).forEach((txt, i, arr) => {
+    const u = new SpeechSynthesisUtterance(txt); u.lang = 'hu-HU'; if (hu) u.voice = hu; u.rate = 1;
+    if (i === arr.length - 1) u.onend = () => { speaking = false; if (view === 'news') render(); };
+    speechSynthesis.speak(u);
+  });
+  if (!hu && voices.length) toast('Nincs magyar hang a telefonon – a Beállítások → Szövegfelolvasás menüben telepíthetsz');
+  render();
+}
+document.addEventListener('click', (e) => { if (e.target.closest('#ttsBtn')) speakSummary(); });
+if ('speechSynthesis' in window) speechSynthesis.getVoices();
+
+// ---------- Heti összefoglaló ----------
+let weekly = null;
+getJSON('data/het.json').then((d) => { weekly = d; if (view === 'news' && doc) render(); }).catch(() => {});
+document.addEventListener('click', (e) => { if (e.target.closest('#wkOpen') && weekly) { load(weekly.id); scrollTo({ top: 0 }); } });
+
+// ---------- Portfólió ----------
+let PF = (() => { try { return JSON.parse(localStorage.getItem('hirapp-pf') || '[]'); } catch (e) { return []; } })();
+const savePF = () => localStorage.setItem('hirapp-pf', JSON.stringify(PF));
+function toHUF(unit) { // 1 egység ára → forintszorzó
+  const q = (n) => { const x = curQuotes().find((y) => y.name === n); return x ? x.price : null; };
+  const u = String(unit || '').trim();
+  if (u === 'HUF' || u === 'Ft') return 1; if (u === 'USD') return q('USD/HUF'); if (u === 'EUR') return q('EUR/HUF');
+  if (u === 'GBP') return q('GBP/HUF'); if (u === 'GBp') { const g = q('GBP/HUF'); return g && g / 100; } if (u === 'CHF') return q('CHF/HUF');
+  return null;
+}
+function pfCalc() {
+  let val = 0, day = 0, cost = 0, costKnown = true; const rows = [];
+  for (const h of PF) {
+    const q = curQuotes().find((x) => x.name === h.name); if (!q) { rows.push({ h, q: null }); continue; }
+    const m = toHUF(q.unit); if (m == null) { rows.push({ h, q, bad: true }); continue; }
+    const v = h.qty * q.price * m, d = q.chg != null ? v - v / (1 + q.chg / 100) : 0;
+    val += v; day += d; if (h.buy > 0) cost += h.qty * h.buy * m; else costKnown = false;
+    rows.push({ h, q, v, d, pl: h.buy > 0 ? v - h.qty * h.buy * m : null });
+  }
+  return { val, day, cost, costKnown, rows };
+}
+const huf = (n) => Math.round(n).toLocaleString('hu-HU') + ' Ft';
+const sgn = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('hu-HU') + ' Ft';
+function portfolioCard() {
+  if (!PF.length) return '';
+  const c = pfCalc();
+  return '<div class="pf" id="pfCard"><small>💼 Portfólióm</small><div class="v">' + huf(c.val) + '</div><div class="d">Ma: ' + sgn(c.day) + ' (' + (c.val ? (c.day / (c.val - c.day) * 100).toFixed(2).replace('.', ',') : '0') + '%)' + (c.costKnown && c.cost ? ' · Összesen: ' + sgn(c.val - c.cost) : '') + '</div></div>';
+}
+document.addEventListener('click', (e) => { if (e.target.closest('#pfCard')) openPanel('pf'); });
+EXTRA_PANELS.pf = () => {
+  const names = curQuotes().filter((q) => toHUF(q.unit) != null).map((q) => q.name), c = pfCalc();
+  let h = '<p style="color:var(--tx2);font-size:14px;margin:0">Add meg, miből mennyi van. Az értéket forintban, élő árfolyamon számolja. Csak ezen a telefonon tárolódik. (Ami nincs a listában, előbb tedd fel a ⭐ Figyelőlistára.)</p>' +
+    '<select class="inp" id="pfName">' + names.map((n) => '<option>' + esc(n) + '</option>').join('') + '</select>' +
+    '<div class="row"><input class="inp" id="pfQty" type="number" step="any" inputmode="decimal" placeholder="mennyiség (db / összeg)"><input class="inp" id="pfBuy" type="number" step="any" inputmode="decimal" placeholder="vételár/db (nem kötelező)"></div>' +
+    '<button class="btn" id="pfAdd">Hozzáadás</button>';
+  if (PF.length) {
+    h += '<h4 class="st">Összesen: ' + huf(c.val) + ' · ma ' + sgn(c.day) + '</h4>';
+    h += c.rows.map((r, i) => '<div class="li"><div class="g">' + esc(r.h.name) + ' × ' + r.h.qty.toLocaleString('hu-HU') + '<small>' + (r.q ? (r.bad ? 'ezt nem tudom forintra váltani' : huf(r.v) + ' · ma ' + sgn(r.d) + (r.pl != null ? ' · összesen ' + sgn(r.pl) : '')) : 'nincs árfolyamadat') + '</small></div><button class="del" data-pfdel="' + i + '">🗑️</button></div>').join('');
+    h += '<p class="note">Tájékoztató számítás középárfolyamon, díjak és adók nélkül.</p>';
+  }
+  return h;
+};
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('#pfAdd, [data-pfdel]'); if (!t) return;
+  if (t.id === 'pfAdd') {
+    const qty = parseFloat(String($('#pfQty').value).replace(',', '.')), buy = parseFloat(String($('#pfBuy').value).replace(',', '.'));
+    if (!(qty > 0)) return toast('Adj meg mennyiséget');
+    PF.push({ name: $('#pfName').value, qty, buy: buy > 0 ? buy : 0 });
+  } else PF.splice(+t.dataset.pfdel, 1);
+  savePF(); renderPanel(); if (view === 'quotes') render();
+});
+
+// ---------- Részletes grafikon ----------
+let chartSym = null, chartName = '', chartRange = '1mo';
+document.addEventListener('click', (e) => { const q = e.target.closest('.q[data-sym]'); if (!q || !q.dataset.sym) return; chartSym = q.dataset.sym; chartName = q.dataset.name; openPanel('chart'); });
+EXTRA_PANELS.chart = () => '<div class="seg" id="chRange">' + [['1d', '1 nap'], ['5d', '1 hét'], ['1mo', '1 hó'], ['1y', '1 év'], ['5y', '5 év']].map(([v, t]) => '<button data-v="' + v + '" class="' + (chartRange === v ? 'on' : '') + '">' + t + '</button>').join('') + '</div><div id="chBox"><div class="skel" style="height:230px"></div></div>';
+EXTRA_AFTER.chart = async () => {
+  $('#panelTitle').textContent = '📈 ' + chartName;
+  try {
+    const d = await getRaw('charts.json'), c = d.charts && d.charts[chartSym], pts = c && c[chartRange];
+    if (!pts || pts.length < 2) throw new Error();
+    drawChart(pts);
+  } catch (e) { $('#chBox').innerHTML = '<p style="color:var(--tx2)">Ehhez még nincs grafikon – a GitHub pár percen belül elkészíti. Próbáld újra kicsit később.</p>'; }
+};
+document.addEventListener('click', (e) => { const b = e.target.closest('#chRange button'); if (!b) return; chartRange = b.dataset.v; renderPanel(); });
+function drawChart(pts) {
+  const W = 600, H = 230, P = 6, vs = pts.map((p) => p[1]), mn = Math.min(...vs), mx = Math.max(...vs), r = mx - mn || 1;
+  const X = (i) => P + i / (pts.length - 1) * (W - 2 * P), Y = (v) => P + (1 - (v - mn) / r) * (H - 2 * P - 14);
+  const up = vs[vs.length - 1] >= vs[0], col = up ? 'var(--up)' : 'var(--down)';
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join('');
+  const q = curQuotes().find((x) => x.sym === chartSym), unit = q ? q.unit : '';
+  const chg = (vs[vs.length - 1] / vs[0] - 1) * 100;
+  const fmtT = (t) => { const d = new Date(t * 1000); return ['1d', '5d'].includes(chartRange) ? d.toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('hu-HU', { year: 'numeric', month: 'short', day: 'numeric' }); };
+  $('#chBox').innerHTML = '<div class="chinfo"><b id="chV">' + fmt(vs[vs.length - 1]) + ' <small style="font-size:13px;color:var(--tx2)">' + esc(unit || '') + '</small></b><span id="chT" class="' + (up ? 'up' : 'down') + '">' + (chg > 0 ? '+' : '') + chg.toFixed(2).replace('.', ',') + '% az időszakban</span></div>' +
+    '<div class="chartbox"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + (up ? '#2ecc71' : '#ff5d5d') + '" stop-opacity=".35"/><stop offset="1" stop-color="' + (up ? '#2ecc71' : '#ff5d5d') + '" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="' + line + 'L' + X(pts.length - 1) + ',' + (H - 14) + 'L' + X(0) + ',' + (H - 14) + 'Z" fill="url(#cg)"/><path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2.2" vector-effect="non-scaling-stroke"/>' +
+    '<line id="chL" x1="0" x2="0" y1="0" y2="' + (H - 14) + '" stroke="var(--tx2)" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" style="display:none"/><circle id="chC" r="5" fill="' + col + '" style="display:none"/>' +
+    '<text x="' + P + '" y="' + (H - 2) + '" font-size="12" fill="var(--tx2)">' + esc(fmtT(pts[0][0])) + '</text><text x="' + (W - P) + '" y="' + (H - 2) + '" font-size="12" fill="var(--tx2)" text-anchor="end">' + esc(fmtT(pts[pts.length - 1][0])) + '</text></svg></div>' +
+    '<p class="note" style="margin:4px 0 0">Min: ' + fmt(mn) + ' · Max: ' + fmt(mx) + ' · Húzd végig az ujjad a grafikonon!</p>';
+  const box = document.querySelector('.chartbox'), svg = box.querySelector('svg');
+  const move = (ev) => {
+    const rc = svg.getBoundingClientRect(), x = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - rc.left) / rc.width * W;
+    const i = Math.max(0, Math.min(pts.length - 1, Math.round((x - P) / (W - 2 * P) * (pts.length - 1)))), p = pts[i];
+    const L = $('#chL'), C = $('#chC'); L.setAttribute('x1', X(i)); L.setAttribute('x2', X(i)); L.style.display = ''; C.setAttribute('cx', X(i)); C.setAttribute('cy', Y(p[1])); C.style.display = '';
+    $('#chV').innerHTML = fmt(p[1]) + ' <small style="font-size:13px;color:var(--tx2)">' + esc(unit || '') + '</small>'; $('#chT').textContent = fmtT(p[0]); $('#chT').className = '';
+  };
+  const end = () => { drawChart(pts); };
+  box.addEventListener('pointermove', move); box.addEventListener('pointerdown', move); box.addEventListener('pointerleave', end); box.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') end(); });
+}
+
+// ---------- Magyar gazdasági mutatók ----------
+EXTRA_PANELS.macro = () => '<div id="macBox"><div class="skel"></div><div class="skel"></div></div>';
+EXTRA_AFTER.macro = async () => {
+  try {
+    const d = await getRaw('makro.json', 600e3), q = (n) => curQuotes().find((x) => x.name === n);
+    let h = '';
+    for (const m of d.items || []) {
+      const ch = m.prev != null ? m.value - m.prev : null, mo = new Date(m.date + 'T00:00:00').toLocaleDateString('hu-HU', { year: 'numeric', month: 'long' });
+      h += '<div class="mac"><div class="g"><b>' + esc(m.name) + '</b><small>' + esc(mo) + (ch != null ? ' · előző hónaphoz: ' + (ch > 0 ? '+' : '') + ch.toFixed(2).replace('.', ',') + ' %-pont' : '') + '</small></div>' + spark(m.hist, ch > 0 ? 'down' : 'up').replace('<svg', '<svg style="width:90px;height:34px"') + '<div class="v">' + m.value.toFixed(m.value < 10 ? 2 : 1).replace('.', ',') + '%</div></div>';
+    }
+    for (const n of ['EUR/HUF', 'USD/HUF']) { const x = q(n); if (x) h += '<div class="mac"><div class="g"><b>' + n + '</b><small>élő árfolyam</small></div>' + spark(x.spark, chgCls(x.chg)).replace('<svg', '<svg style="width:90px;height:34px"') + '<div class="v">' + fmt(x.price) + '</div></div>'; }
+    $('#macBox').innerHTML = h + '<p class="note" style="text-align:left">Forrás: OECD és Eurostat adatai a St. Louis-i Fed (FRED) adatbázisán keresztül. Havi adatok, a megjelenés 1–2 hónapot késhet. A BUBOR (bankközi kamat) jellemzően az MNB alapkamata közelében mozog.</p>';
+  } catch (e) { $('#macBox').innerHTML = '<p style="color:var(--tx2)">A mutatók most nem érhetők el – a GitHub naponta kétszer frissíti őket, próbáld később.</p>'; }
+};
+
+// ---------- Közvélemény-kutatások ----------
+EXTRA_PANELS.polls = () => '<div id="polBox"><div class="skel" style="height:200px"></div></div>';
+EXTRA_AFTER.polls = async () => {
+  try {
+    const d = await getRaw('kozvelemeny.json', 600e3), polls = (d.polls || []).filter((p) => !/election|választás/i.test(p.firm));
+    if (!polls.length) throw new Error();
+    const last = polls.slice(0, 12), avg = {};
+    last.forEach((p) => Object.entries(p.vals).forEach(([k, v]) => { (avg[k] = avg[k] || []).push(v); }));
+    const parties = Object.keys(avg).sort((a, b) => avg[b].reduce((x, y) => x + y, 0) / avg[b].length - avg[a].reduce((x, y) => x + y, 0) / avg[a].length).slice(0, 7);
+    const series = polls.slice(0, 60).reverse(), t0 = Date.parse(series[0].date), t1 = Date.parse(series[series.length - 1].date) || t0 + 1;
+    const W = 600, H = 220, P = 8, max = Math.max(10, ...series.flatMap((p) => parties.map((k) => p.vals[k] || 0))) * 1.1;
+    const X = (d) => P + (Date.parse(d) - t0) / Math.max(1, t1 - t0) * (W - 2 * P), Y = (v) => P + (1 - v / max) * (H - 2 * P);
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="width:100%;height:220px">';
+    [10, 20, 30, 40, 50].filter((v) => v < max).forEach((v) => { svg += '<line x1="0" x2="' + W + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--line)" vector-effect="non-scaling-stroke"/><text x="2" y="' + (Y(v) - 2) + '" font-size="11" fill="var(--tx2)">' + v + '%</text>'; });
+    parties.forEach((k, i) => {
+      const pts = series.filter((p) => p.vals[k] != null);
+      if (pts.length > 1) svg += '<path d="' + pts.map((p, j) => (j ? 'L' : 'M') + X(p.date).toFixed(1) + ',' + Y(p.vals[k]).toFixed(1)).join('') + '" fill="none" stroke="' + PALETTE[i] + '" stroke-width="2" vector-effect="non-scaling-stroke"/>';
+      pts.forEach((p) => { svg += '<circle cx="' + X(p.date).toFixed(1) + '" cy="' + Y(p.vals[k]).toFixed(1) + '" r="2.5" fill="' + PALETTE[i] + '"/>'; });
+    });
+    svg += '</svg>';
+    let h = '<p style="color:var(--tx2);font-size:13px;margin:0 0 6px">Pártok támogatottsága a nyilvánosan közzétett felmérések szerint (a biztos szavazó pártválasztók körében, ahogy az intézetek közölték). Az egyes intézetek eredményei eltérhetnek egymástól.</p>' + svg +
+      '<div class="legend">' + parties.map((k, i) => '<span><i style="background:' + PALETTE[i] + '"></i>' + esc(k) + '</span>').join('') + '</div>' +
+      '<h4 class="st">Legutóbbi felmérések</h4><div style="overflow-x:auto"><table class="pt2"><tr><th>Intézet, időpont</th>' + parties.map((k) => '<th>' + esc(k) + '</th>').join('') + '</tr>' +
+      polls.slice(0, 15).map((p) => '<tr><td>' + esc(p.firm) + '<br><small style="color:var(--tx2)">' + esc(p.date) + (p.sample ? ' · ' + (+p.sample).toLocaleString('hu-HU') + ' fő' : '') + '</small></td>' + parties.map((k) => '<td>' + (p.vals[k] != null ? p.vals[k] : '–') + '</td>').join('') + '</tr>').join('') + '</table></div>' +
+      '<p class="note" style="text-align:left">Forrás: <a href="' + esc(d.page) + '" target="_blank" rel="noopener" style="color:var(--acc)">Wikipédia – közvélemény-kutatások összesítése</a>. Naponta többször frissül.</p>';
+    $('#polBox').innerHTML = h;
+  } catch (e) { $('#polBox').innerHTML = '<p style="color:var(--tx2)">A közvélemény-kutatások most nem érhetők el – próbáld később.</p>'; }
+};
+
+// ---------- Parlament ----------
+const PARL = /országgyűlés|orszaggyules|parlament|törvényjavaslat|torvenyjavaslat|törvénymódosítás|képviselő|kepviselo|frakció|frakcio|házelnök|hazelnok|szavaz|módosító|interpelláció|napirend|ülésszak|alaptörvény/i;
+EXTRA_PANELS.parl = () => {
+  const items = ((friss && friss.items) || []).filter((it) => it.sec === 'hu_pol' && PARL.test(it.title + ' ' + (it.d || '')));
+  return '<p style="color:var(--tx2);font-size:13px;margin:0 0 6px">Az Országgyűlésről, törvényjavaslatokról és szavazásokról szóló friss hírek a lapokból. A hivatalos napirend és a szavazások eredménye a <a href="https://www.parlament.hu" target="_blank" rel="noopener" style="color:var(--acc)">parlament.hu</a> oldalon érhető el.</p>' +
+    (items.length ? items.slice(0, 60).map(itemHTML).join('') : '<p style="color:var(--tx2)">Az elmúlt időszakban nem volt ilyen hír.</p>');
+};
+
+// ---------- Napi kvíz ----------
+let quizState = null;
+EXTRA_PANELS.quiz = () => '<div id="qzBox"><div class="skel"></div></div>';
+EXTRA_AFTER.quiz = async () => {
+  let qs = null, src = '';
+  try { const d = await getJSON('data/kviz.json'); if (d && d.questions && Date.now() - Date.parse(d.date + 'T23:59:59') < 36 * 3600e3) { qs = d.questions; src = 'A mai hírekből, Claude készítette.'; } } catch (e) {}
+  if (!qs) { // kulcs nélkül: „Melyik lap írta ezt a címet?”
+    const its = ((friss && friss.items) || []).slice(0, 80), srcs = [...new Set(its.map((x) => x.source))];
+    if (its.length < 5 || srcs.length < 4) { $('#qzBox').innerHTML = '<p style="color:var(--tx2)">Most még nincs elég hír a kvízhez – nézz vissza később!</p>'; return; }
+    const pick = its.slice().sort(() => Math.random() - 0.5).slice(0, 5);
+    qs = pick.map((it) => { const opts = [it.source].concat(srcs.filter((x) => x !== it.source).sort(() => Math.random() - 0.5).slice(0, 3)).sort(() => Math.random() - 0.5); return { q: 'Melyik lap hozta ezt a hírt? „' + it.title + '”', options: opts, answer: opts.indexOf(it.source), explain: it.source + ' – ' + ago(it.t) }; });
+    src = 'Kérdések a friss hírekből. (Claude API-kulccsal este 5 tartalmi kérdés is készül a nap híreiből.)';
+  }
+  quizState = { qs, ans: [], src }; drawQuiz();
+};
+function drawQuiz() {
+  const s = quizState; let h = '<p style="color:var(--tx2);font-size:13px;margin:0">' + esc(s.src) + '</p>', score = 0;
+  s.qs.forEach((q, i) => {
+    const a = s.ans[i]; if (a === q.answer) score++;
+    h += '<div class="qz"><p>' + (i + 1) + '. ' + esc(q.q) + '</p>' + q.options.map((o, j) => '<button data-qi="' + i + '" data-oi="' + j + '" class="' + (a != null ? (j === q.answer ? 'ok' : j === a ? 'bad' : '') : '') + '"' + (a != null ? ' disabled' : '') + '>' + esc(o) + '</button>').join('') + (a != null && q.explain ? '<div class="ex">' + esc(q.explain) + '</div>' : '') + '</div>';
+  });
+  if (s.ans.filter((x) => x != null).length === s.qs.length) {
+    const best = Math.max(score, +(localStorage.getItem('hirapp-quiz-best') || 0)); localStorage.setItem('hirapp-quiz-best', best);
+    h += '<div class="hero"><small>Eredmény</small><p>' + score + ' / ' + s.qs.length + (score === s.qs.length ? ' – hibátlan! 🎉' : '') + '</p></div><button class="btn sec2" id="qzAgain">Új kör</button>';
+  }
+  $('#qzBox').innerHTML = h;
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('#qzBox button[data-qi]'); if (b && quizState) { quizState.ans[+b.dataset.qi] = +b.dataset.oi; drawQuiz(); return; }
+  if (e.target.closest('#qzAgain')) EXTRA_AFTER.quiz();
+});
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW:', e));
 load().then(() => { pollLive(true); pollBtc(); pollFriss(true); });

@@ -11,7 +11,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const { FEEDS, SECTIONS, readFeeds, readQuotes, sendPushDevice, pushConfigs, get } = require('./gen.js');
+const { FEEDS, SECTIONS, QUOTES, readFeeds, readQuotes, sendPushDevice, pushConfigs, get } = require('./gen.js');
+const A = require('./adatok.js');
 const B = require('./beallitas.js');
 
 const STATE_FILE = process.env.SEEN_FILE || 'seen.json';
@@ -75,11 +76,25 @@ async function readCalendar() {
   let st = null; try { st = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch (e) {}
   if (Array.isArray(st)) st = { seen: st };                      // régi formátum
   let first = !st || !Array.isArray(st.seen);
-  st = { seen: [], alerts: {}, recent: [], ...(st || {}) };
+  st = { seen: [], alerts: {}, recent: [], times: {}, ...(st || {}) };
+  st.times = st.times || {};
   const seenSet = new Set(st.seen);
   const cfgs = pushConfigs();
-  let settings = new Map(), latest = [], quotes = null, calendar = null, lastCal = 0, round = 0;
-  try { const prev = JSON.parse(fs.readFileSync(path.join(PUB_DIR, 'hirek.json'), 'utf8')); latest = prev.items || []; } catch (e) {}
+  let settings = new Map(), latest = [], quotes = null, calendar = null, charts = null, macro = null, polls = null, round = 0;
+  // a korábban közzétett adatok visszatöltése (így a ritkán frissülők nem tűnnek el, és nem kell mindent újra letölteni)
+  const prevFile = async (name) => {
+    try {
+      if (process.env.GITHUB_REPOSITORY) { const r = await get('https://raw.githubusercontent.com/' + process.env.GITHUB_REPOSITORY + '/arfolyam/' + name + '?t=' + Date.now()); if (r.ok) return await r.json(); }
+      else return JSON.parse(fs.readFileSync(path.join(PUB_DIR, name), 'utf8'));
+    } catch (e) {}
+    return null;
+  };
+  { const h = await prevFile('hirek.json'); if (h) latest = h.items || []; }
+  { const c = await prevFile('charts.json'); if (c) charts = c.charts || null; }
+  { const m = await prevFile('makro.json'); if (m) macro = m.items || null; }
+  { const k = await prevFile('kozvelemeny.json'); if (k) polls = k; }
+  { const n = await prevFile('naptar.json'); if (n) calendar = n.events || null; }
+  const due = (k, ms) => !st.times[k] || Date.now() - st.times[k] > ms;
 
   for (;;) {
     round++;
@@ -152,13 +167,22 @@ async function readCalendar() {
       }
       for (const k of Object.keys(st.alerts)) if (Date.now() - st.alerts[k] > 3 * 86400e3) delete st.alerts[k];
 
-      // 3) naptár félóránként
-      if (Date.now() - lastCal > 30 * 60e3) { lastCal = Date.now(); const cal = await readCalendar(); if (cal.length) calendar = cal; }
+      // 3) ritkábban frissülő adatok
+      if (due('cal', 30 * 60e3)) { st.times.cal = Date.now(); const cal = await readCalendar(); if (cal.length) calendar = cal; }
+      const syms = QUOTES.map(([n, sy]) => [n, sy]).concat([...extra.values()].map(([n, sy]) => [n, sy]));
+      const missing = syms.some(([, sy]) => !charts || !charts[sy] || !charts[sy]['1y']);
+      if (due('chS', 10 * 60e3)) { st.times.chS = Date.now(); charts = await A.readCharts(syms, ['1d', '5d'], charts); }
+      if (due('chL', 6 * 3600e3) || missing) { st.times.chL = Date.now(); charts = await A.readCharts(syms, ['1mo', '1y', '5y'], charts); }
+      if (due('mac', 12 * 3600e3)) { st.times.mac = Date.now(); const m = await A.readMacro(); if (m.length) macro = m; }
+      if (due('pol', 6 * 3600e3)) { st.times.pol = Date.now(); try { const p = await A.readPolls(); if (p.polls.length) polls = p; } catch (e) { console.warn('Közvélemény-kutatás hiba:', e.message); } }
 
       // 4) feltöltés
       const now = new Date().toISOString(), files = { 'hirek.json': { updated: now, items: latest } };
       if (quotes) files['quotes.json'] = { updated: now, quotes };
       if (calendar) files['naptar.json'] = { updated: now, events: calendar };
+      if (charts) files['charts.json'] = { updated: now, charts };
+      if (macro) files['makro.json'] = { updated: now, items: macro };
+      if (polls) files['kozvelemeny.json'] = { updated: now, ...polls };
       publish(files);
       fs.writeFileSync(STATE_FILE, JSON.stringify(st));
     } catch (e) { console.error('Kör hiba:', e && e.stack || e); }

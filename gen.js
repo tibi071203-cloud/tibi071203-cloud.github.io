@@ -83,6 +83,64 @@ async function readQuotes(extra = []) {   // extra: a figyelőlistás szimbólum
   return res.map((r, i) => (r.status === 'fulfilled' ? r.value : (console.warn('Árfolyam hiba:', list[i][0], r.reason && r.reason.message), null))).filter(Boolean);
 }
 
+// ---------- Claude hívás (JSON választ vár) ----------
+async function claudeJSON(prompt, maxTokens = 2500) {
+  const r = await get('https://api.anthropic.com/v1/messages', {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': AI_KEY, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
+  }, 120000);
+  if (!r.ok) throw new Error('Claude API: HTTP ' + r.status + ' ' + (await r.text()).slice(0, 300));
+  const txt = ((await r.json()).content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
+  return JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
+}
+
+// ---------- Heti összefoglaló (vasárnap este, az esti összefoglaló után) ----------
+async function buildWeekly() {
+  let idx = []; try { idx = JSON.parse(fs.readFileSync(path.join(DATA, 'index.json'), 'utf8')); } catch (e) {}
+  const since = new Date(Date.now() - 7 * 86400e3).toISOString().slice(0, 10);
+  const docs = idx.filter((x) => x.kind !== 'het' && x.date >= since).map((x) => { try { return JSON.parse(fs.readFileSync(path.join(DATA, 'archive', x.id + '.json'), 'utf8')); } catch (e) { return null; } }).filter(Boolean);
+  if (!docs.length) { console.log('Heti összefoglaló: nincs elég adat.'); return null; }
+  let sum = null, ai = false;
+  if (AI_KEY) {
+    const lines = docs.map((d) => d.date + ' ' + d.kind + ': ' + d.headline + '\n' + Object.entries(d.sections || {}).map(([k, pts]) => pts.map((p) => '  [' + k + '] ' + p.text + ' (' + (p.sources || []).join(', ') + ')').join('\n')).join('\n')).join('\n');
+    try {
+      sum = await claudeJSON(`Magyar hírszerkesztő vagy. Az alábbi napi összefoglalókból készíts HETI összefoglalót: a hét legfontosabb eseményei rovatonként 2–4 pontban (összesen kb. 10 pont), tömör mondatokban, a "sources" mezőben a forrásnevekkel.
+Csak a megadott tényekre támaszkodj, légy politikailag semleges (ne minősíts; vitás ügyben röviden mindkét oldal). Ne adj befektetési tanácsot. "headline": a hét legfontosabb eseménye egy mondatban.
+KIZÁRÓLAG érvényes JSON: {"headline":"...","sections":{"hu_pol":[{"text":"...","sources":["..."]}],"world":[...],"hu_mkt":[...],"w_mkt":[...]}}
+
+${lines}`, 3000);
+      ai = true;
+    } catch (e) { console.warn('Heti AI hiba:', e.message); }
+  }
+  if (!sum) {   // kulcs nélkül: a napi összefoglalók pontjaiból válogatás
+    const sections = {}; for (const [k] of SECTIONS) { const seen = new Set(); sections[k] = []; for (const d of docs) for (const p of (d.sections && d.sections[k]) || []) { const kk = p.text.toLowerCase().slice(0, 50); if (!seen.has(kk) && sections[k].length < 4) { seen.add(kk); sections[k].push(p); } } }
+    sum = { headline: docs[0].headline, sections };
+  }
+  const now = new Date(), date = now.toLocaleDateString('en-CA', { timeZone: TZ });
+  const doc = { id: date + '-het', kind: 'het', date, created: now.toISOString(), ai, headline: String(sum.headline || ''), sections: sum.sections || {}, quotes: docs[0].quotes || [], links: {} };
+  fs.mkdirSync(path.join(DATA, 'archive'), { recursive: true });
+  fs.writeFileSync(path.join(DATA, 'archive', doc.id + '.json'), JSON.stringify(doc));
+  fs.writeFileSync(path.join(DATA, 'het.json'), JSON.stringify(doc));
+  idx = [{ id: doc.id, kind: 'het', date, headline: doc.headline }].concat(idx.filter((x) => x.id !== doc.id)).slice(0, 140);
+  fs.writeFileSync(path.join(DATA, 'index.json'), JSON.stringify(idx));
+  console.log('Heti összefoglaló kész:', doc.id);
+  return doc;
+}
+
+// ---------- Napi kvíz (este, csak Claude-kulccsal; kulcs nélkül az alkalmazás maga készít kvízt) ----------
+async function buildQuiz(news) {
+  if (!AI_KEY) return;
+  const list = Object.values(news).flat().slice(0, 60).map((it, i) => (i + 1) + '. [' + it.source + '] ' + it.title + (it.desc ? ' – ' + it.desc : '')).join('\n');
+  try {
+    const q = await claudeJSON(`Készíts 5 feleletválasztós kvízkérdést magyarul a mai hírekből (az alábbi címek alapján). Minden kérdésnek pontosan 4 válaszlehetősége legyen, ebből pontosan egy helyes, ami KIZÁRÓLAG a megadott hírekből következik. A rossz válaszok legyenek hihetőek, de egyértelműen hibásak. Politikailag semleges kérdéseket írj (tények, nem vélemények). "explain": egy mondat, miért ez a helyes válasz, a forrás nevével.
+KIZÁRÓLAG érvényes JSON: {"questions":[{"q":"...","options":["...","...","...","..."],"answer":0,"explain":"..."}]}
+
+${list}`, 2000);
+    const qs = (q.questions || []).filter((x) => x && x.q && Array.isArray(x.options) && x.options.length === 4 && x.answer >= 0 && x.answer < 4).slice(0, 5);
+    if (qs.length) { fs.writeFileSync(path.join(DATA, 'kviz.json'), JSON.stringify({ date: new Date().toLocaleDateString('en-CA', { timeZone: TZ }), questions: qs })); console.log('Kvíz kész:', qs.length, 'kérdés'); }
+  } catch (e) { console.warn('Kvíz hiba:', e.message); }
+}
+
 // ---------- Összefoglaló ----------
 async function aiSummary(kind, news, quotes) {
   const list = (arr) => arr.map((it, i) => (i + 1) + '. [' + it.source + '] ' + it.title + (it.desc ? ' – ' + it.desc : '')).join('\n') || '(nincs)';
@@ -145,7 +203,9 @@ async function build(kind) {
   // linkek a forrásokhoz (a hírek eredeti cikkeihez)
   const links = {}; for (const k of Object.keys(news)) links[k] = news[k].slice(0, 30).map((it) => ({ title: it.title, link: it.link, source: it.source }));
   const now = new Date(), date = now.toLocaleDateString('en-CA', { timeZone: TZ });
-  return { id: date + '-' + kind, kind, date, created: now.toISOString(), ai, headline: sum.headline, sections: sum.sections, quotes, links };
+  const doc = { id: date + '-' + kind, kind, date, created: now.toISOString(), ai, headline: sum.headline, sections: sum.sections, quotes, links };
+  Object.defineProperty(doc, '_news', { value: news, enumerable: false });
+  return doc;
 }
 
 function save(doc) {
@@ -191,7 +251,7 @@ async function notify(doc) {
   catch (e) { console.warn('PUSH_CONFIG nem érvényes JSON:', e.message); return; }
   if (!cfgs.length) { console.log('Nincs beállítva értesítés (PUSH_CONFIG).'); return; }
   let webpush; try { webpush = require('web-push'); } catch (e) { console.warn('A web-push csomag hiányzik (npm install).'); return; }
-  const payload = JSON.stringify({ title: (doc.kind === 'reggel' ? '☀️ Reggeli hírek' : '🌙 Esti hírek'), body: doc.headline || 'Megérkezett a friss összefoglaló.', url: process.env.APP_URL || './', tag: doc.id });
+  const payload = JSON.stringify({ title: (doc.kind === 'het' ? '📅 Heti összefoglaló' : doc.kind === 'reggel' ? '☀️ Reggeli hírek' : '🌙 Esti hírek'), body: doc.headline || 'Megérkezett a friss összefoglaló.', url: process.env.APP_URL || './', tag: doc.id });
   const B = require('./beallitas.js'), settings = await B.loadAll(cfgs, get);
   for (const c of cfgs) {
     const st = settings.get(B.deviceId(c));
@@ -214,14 +274,23 @@ if (require.main === module) (async () => {
     if (!mode) { console.log('Most (' + h + ' óra Budapesten) nincs teendő.'); return; }
   }
   if (mode === 'push') {   // a legutóbbi összefoglalóról értesítés (a GitHub ezt a közzététel után hívja)
-    try { await notify(JSON.parse(fs.readFileSync(path.join(DATA, 'latest.json'), 'utf8'))); } catch (e) { console.error('HIBA:', e.message); process.exitCode = 1; }
+    try {
+      await notify(JSON.parse(fs.readFileSync(path.join(DATA, 'latest.json'), 'utf8')));
+      try { const w = JSON.parse(fs.readFileSync(path.join(DATA, 'het.json'), 'utf8')); if (Date.now() - Date.parse(w.created) < 3600e3) await notify(w); } catch (e) {}
+    } catch (e) { console.error('HIBA:', e.message); process.exitCode = 1; }
     return;
   }
   if (mode !== 'reggel' && mode !== 'este') { console.log('Használat: node gen.js auto|reggel|este|push'); return; }
   try {
     const doc = await build(mode); save(doc);
+    let weekly = null;
+    if (mode === 'este') {
+      await buildQuiz(doc._news);
+      const dow = new Date().toLocaleDateString('en-US', { timeZone: TZ, weekday: 'short' });
+      if (dow === 'Sun' || process.env.HETI === '1') weekly = await buildWeekly();
+    }
     if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, 'kesz=1\n');
     console.log('Kész:', doc.id, '| AI:', doc.ai, '|', Object.values(doc.sections).reduce((a, s) => a + s.length, 0), 'pont |', doc.quotes.length, 'árfolyam');
-    if (process.env.NO_PUSH !== '1') await notify(doc);
+    if (process.env.NO_PUSH !== '1') { await notify(doc); if (weekly) await notify(weekly); }
   } catch (e) { console.error('HIBA:', e); process.exitCode = 1; }
 })();

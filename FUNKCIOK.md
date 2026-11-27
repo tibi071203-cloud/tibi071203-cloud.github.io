@@ -34,3 +34,20 @@ Ha a kulcs lejár, készíts egy újat, és illeszd be ugyanide.
 | **☰ Több → 📲 Telepítés, értesítés be** | Az értesítések bekapcsolása és a PUSH_CONFIG szöveg (a régi Beállítások ide került). | |
 
 Új az árfolyamoknál: **GBP/HUF** és **CHF/HUF** is.
+
+---
+
+## Újabb funkciók (2. kör)
+
+| Hol találod | Mit tud | Mire figyelj |
+|---|---|---|
+| **☰ Több → 💼 Portfólióm** | Add meg, miből mennyi van (pl. 50 OTP, 1000 EUR, 0,1 Bitcoin, figyelőlistás részvények), opcionálisan a vételárral. Mutatja az értékét forintban, a mai és az összes nyereséget/veszteséget. Az **Árfolyamok** fül tetején zöld kártyán is látszik. | Csak ezen a telefonon tárolódik. Ami nincs a listában, előbb tedd fel a ⭐ Figyelőlistára. |
+| **Árfolyamok → koppints egy kártyára** | Részletes grafikon: 1 nap / 1 hét / 1 hónap / 1 év / 5 év. Ujjal végighúzva látod az árat az adott időpontban. | Az 1 napos és 1 hetes grafikon 10 percenként, a hosszabbak 6 óránként frissülnek. Új figyelőlistás elemnél pár perc, mire megjelenik. |
+| **☰ Több → 🇭🇺 Gazdasági mutatók** | Infláció (éves), 3 hónapos bankközi kamat (BUBOR), 10 éves állampapír-hozam, munkanélküliség, mini grafikonnal, valamint az euró és a dollár árfolyama. | Havi adatok (OECD/Eurostat), 1–2 hónapos késéssel jelennek meg. Az MNB alapkamatát a forrás nem közli; a BUBOR jellemzően annak közelében mozog. |
+| **☰ Több → 🗳️ Közvélemény-kutatások** | A pártok támogatottsága grafikonon és táblázatban, intézetenként, a nyilvánosan közzétett felmérések alapján (Wikipédia-összesítés). | Az intézetek eredményei eltérhetnek egymástól; az alkalmazás nem átlagol és nem kommentál. |
+| **☰ Több → 🏛️ Parlament** | Az Országgyűlésről, törvényjavaslatokról és szavazásokról szóló friss hírek. | A hivatalos napirend a parlament.hu oldalon van; ez a lista a lapok híreiből válogat. |
+| **Hírek → 🔊 Felolvasás** | A telefon hangosan felolvassa az összefoglalót. Még egy koppintás: leállítás. | Ha nincs magyar hang, a telefon Beállítások → Szövegfelolvasás (Google szövegfelolvasó) menüjében telepíthető. |
+| **Hírek → 📅 Heti összefoglaló** | Vasárnap este a hét legfontosabb eseményei, értesítéssel. A Hírek oldalon 4 napig kártyán látszik, utána az Archívumban. | Claude-kulccsal valódi összefoglaló; kulcs nélkül a hét napi összefoglalóiból válogat. |
+| **📤 gomb** | Megosztás: egy hír (Friss fül) vagy az egész összefoglaló (Hírek fül) elküldése Messengeren, Viberen, e-mailben stb. | |
+| **☰ Több → 🔤 Megjelenés** | Téma (automatikus / világos / sötét) és betűméret (kicsi – nagyon nagy). | Csak ezen a telefonon. |
+| **☰ Több → 🧠 Napi kvíz** | Claude-kulccsal este 5 kérdés a nap híreiből, magyarázattal. Kulcs nélkül: „Melyik lap hozta ezt a hírt?” kérdések a friss hírekből. | Az „Új kör” gombbal újrakezdheted. |
