@@ -52,14 +52,20 @@ jobs:
       - name: Android SDK előkészítése
         if: steps.need.outputs.build == '1'
         run: |
+          set +o pipefail   # a "yes |" különben hibát jelezne, amikor az sdkmanager végez
           SDK="$ANDROID_HOME"
-          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" "build-tools;36.1.0" "platforms;android-36" > /dev/null
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" --licenses > /dev/null || true
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK" "build-tools;36.1.0" "platforms;android-36" > /dev/null || true
+          if [ ! -d "$SDK/build-tools/36.1.0" ] || [ ! -d "$SDK/platforms/android-36" ]; then
+            echo "::error::Az Android build-tools 36.1.0 / android-36 telepítése nem sikerült"; ls "$SDK/build-tools" "$SDK/platforms"; exit 1
+          fi
+          echo "Android SDK rendben."
           mkdir -p "$HOME/bwsdk"
           for f in "$SDK"/*; do ln -sfn "$f" "$HOME/bwsdk/$(basename "$f")"; done
           [ -e "$HOME/bwsdk/bin" ] || ln -s "$SDK/cmdline-tools/latest/bin" "$HOME/bwsdk/bin"
           mkdir -p "$HOME/.bubblewrap"
           echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$HOME/bwsdk\"}" > "$HOME/.bubblewrap/config.json"
-          npm install -g @bubblewrap/cli --no-audit --no-fund
+          npm install -g @bubblewrap/cli@1.28.0 --no-audit --no-fund
 
       - name: Aláíró kulcs
         if: steps.need.outputs.build == '1'
