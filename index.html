@@ -86,6 +86,20 @@ textarea{width:100%;height:120px;border-radius:10px;border:1px solid var(--line)
 #getApp .t{flex:1;font-size:14px;line-height:1.3}#getApp .t b{display:block;font-size:15px}
 #getApp button,#getApp a.b{border:0;background:#fff;color:#14532f;font:800 14px system-ui;padding:9px 13px;border-radius:10px;cursor:pointer;text-decoration:none;white-space:nowrap}
 #getApp .x{background:none;color:#fff;opacity:.7;padding:4px 6px;font-size:18px}
+
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--up);margin:2px 0 4px}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--up);animation:pl 1.6s infinite}
+.live.old{color:var(--tx2)}.live.old i{background:var(--tx2);animation:none}
+@keyframes pl{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--up) 60%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+.q.flash-up{animation:fu 1.2s}.q.flash-down{animation:fd 1.2s}
+@keyframes fu{0%{background:color-mix(in srgb,var(--up) 30%,var(--bg))}}@keyframes fd{0%{background:color-mix(in srgb,var(--down) 30%,var(--bg))}}
+
+.fi{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);text-decoration:none;color:var(--tx)}
+.fi:first-of-type{border-top:0}
+.fi .ic{flex:none;font-size:18px;line-height:1.3}
+.fi .m{font-size:12px;color:var(--tx2);margin-bottom:2px}
+.fi .tt{font-size:15px;font-weight:550;line-height:1.35}
+.fi.uj .tt::before{content:'ÚJ';font-size:10px;font-weight:800;color:#fff;background:var(--down);border-radius:5px;padding:1px 5px;margin-right:6px;vertical-align:2px}
 #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111c;color:#fff;padding:8px 14px;border-radius:10px;font-size:14px;z-index:60;display:none}
 .skel{height:14px;border-radius:7px;background:linear-gradient(90deg,var(--line),var(--card),var(--line));background-size:200% 100%;animation:sh 1.2s infinite;margin:10px 0}
 @keyframes sh{to{background-position:-200% 0}}
@@ -109,6 +123,7 @@ textarea{width:100%;height:120px;border-radius:10px;border:1px solid var(--line)
 
 <div class="bar">
   <button class="on" data-v="news"><span>📰</span>Hírek</button>
+  <button data-v="friss"><span>⚡</span>Friss</button>
   <button data-v="quotes"><span>📈</span>Árfolyamok</button>
   <button data-v="archive"><span>🗂️</span>Archívum</button>
   <button data-v="settings"><span>⚙️</span>Beállítások</button>
@@ -185,24 +200,103 @@ function render() {
       }
       const links = (doc.links && doc.links[k]) || [];
       if (links.length && doc.ai) h += '<details class="more"><summary>Eredeti cikkek (' + links.length + ')</summary>' + links.map((l) => '<a href="' + esc(l.link) + '" target="_blank" rel="noopener">' + esc(l.title) + ' <i>· ' + esc(l.source) + '</i></a>').join('') + '</details>';
-      if ((k === 'hu_mkt' || k === 'w_mkt') && doc.quotes && doc.quotes.length) h += quotesHTML(k === 'hu_mkt' ? ['hu', 'fx'] : ['w', 'c']);
+      if ((k === 'hu_mkt' || k === 'w_mkt') && curQuotes().length) h += '<div class="qwrap" data-g="' + (k === 'hu_mkt' ? 'hu,fx' : 'w,c') + '">' + quotesHTML(k === 'hu_mkt' ? ['hu', 'fx'] : ['w', 'c']) + '</div>';
       h += '</section>';
     }
+  } else if (view === 'friss') {
+    h += '<section class="sec"><h2>⚡ Friss hírek</h2><div id="frissList">' + frissHTML() + '</div></section>';
   } else if (view === 'quotes') {
-    h += '<section class="sec"><h2>📈 Árfolyamok</h2>' + (doc.quotes && doc.quotes.length ? quotesHTML(QGRP.map((g) => g[0])) : '<p style="color:var(--tx2)">Most nincs árfolyamadat.</p>') + '<p class="note" style="margin-bottom:4px">Napi változás az előző záráshoz képest · grafikon: utolsó ~20 nap</p></section>';
+    h += '<section class="sec"><h2>📈 Árfolyamok</h2>' + (curQuotes().length ? '<div class="qwrap" data-g="hu,fx,w,c">' + quotesHTML(QGRP.map((g) => g[0])) + '</div>' : '<p style="color:var(--tx2)">Most nincs árfolyamadat.</p>') + '<p class="note" style="margin-bottom:4px">Napi változás az előző záráshoz képest · grafikon: utolsó ~20 nap<br>A tőzsdei árak kb. percenként frissülnek (a Budapesti Értéktőzsde adatai a forrásnál további ~15 percet késhetnek), a bitcoin élő.</p></section>';
   }
   h += '<p class="note">Tájékoztató jellegű összefoglaló, nem befektetési tanács.</p>';
   $('#main').innerHTML = h;
 }
 function quotesHTML(groups) {
-  let h = '';
+  let h = liveBadge();
   for (const [g, t] of QGRP) {
     if (!groups.includes(g)) continue;
-    const rows = doc.quotes.filter((q) => q.grp === g); if (!rows.length) continue;
-    h += '<div class="qgrp">' + t + '</div><div class="qgrid">' + rows.map((q) => { const c = chgCls(q.chg); return '<div class="q"><div class="n">' + esc(q.name) + '</div><div class="p">' + fmt(q.price) + ' <small>' + esc(q.unit || '') + '</small></div><div class="c ' + c + '">' + chgTxt(q.chg) + '</div>' + spark(q.spark, c) + '</div>'; }).join('') + '</div>';
+    const rows = curQuotes().filter((q) => q.grp === g); if (!rows.length) continue;
+    h += '<div class="qgrp">' + t + '</div><div class="qgrid">' + rows.map((q) => { const c = chgCls(q.chg); return '<div class="q' + (flash[q.name] ? ' flash-' + flash[q.name] : '') + '"><div class="n">' + esc(q.name) + '</div><div class="p">' + fmt(q.price) + ' <small>' + esc(q.unit || '') + '</small></div><div class="c ' + c + '">' + chgTxt(q.chg) + '</div>' + spark(q.spark, c) + '</div>'; }).join('') + '</div>';
   }
   return h;
 }
+
+// ---------- Élő árfolyamok ----------
+// A GitHub 5 percenként frissíti a quotes.json-t az „arfolyam” ágon; az app percenként lekérdezi.
+// A bitcoin közvetlenül a tőzsdéről jön, 15 másodpercenként.
+let live = null, btc = null, flash = {}, lastLiveFetch = 0;
+function liveSource() {
+  const h = location.hostname, m = h.match(/^([^.]+)\.github\.io$/i);
+  if (!m) return null;
+  const seg = location.pathname.split('/').filter(Boolean)[0];
+  const repo = seg && !/\.(html|json|apk)$/.test(seg) ? seg : h;
+  return 'https://raw.githubusercontent.com/' + m[1] + '/' + repo + '/arfolyam/quotes.json';
+}
+function curQuotes() {
+  let base = (doc && doc.quotes) || [];
+  if (live && live.quotes && live.quotes.length && (!doc || Date.parse(live.updated) >= Date.parse(doc.created) - 3600e3)) base = live.quotes;
+  if (!btc) return base;
+  return base.map((q) => (q.name === 'Bitcoin' ? { ...q, price: btc.price, chg: btc.chg } : q));
+}
+function liveBadge() {
+  const t = Math.max(live ? Date.parse(live.updated) : 0, btc ? btc.t : 0, doc && doc.created ? Date.parse(doc.created) : 0);
+  if (!t) return '';
+  const fresh = Date.now() - (live ? Date.parse(live.updated) : 0) < 15 * 60e3;
+  return '<div class="live' + (fresh ? '' : ' old') + '"><i></i>' + (fresh ? 'Élő · ' : '') + 'frissítve: ' + new Date(live && fresh ? Date.parse(live.updated) : t).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }) + '</div>';
+}
+function refreshQuotes(prev) {
+  flash = {};
+  const now = curQuotes();
+  for (const q of now) { const o = prev.find((x) => x.name === q.name); if (o && o.price !== q.price) flash[q.name] = q.price > o.price ? 'up' : 'down'; }
+  document.querySelectorAll('.qwrap').forEach((w) => { w.innerHTML = quotesHTML(w.dataset.g.split(',')); });
+}
+async function pollLive(force) {
+  if (document.hidden && !force) return;
+  const src = liveSource();
+  if (src && (force || Date.now() - lastLiveFetch > 25e3)) {
+    lastLiveFetch = Date.now();
+    try { const r = await fetch(src + '?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const prev = curQuotes(); const j = await r.json(); if (!live || j.updated !== live.updated) { live = j; refreshQuotes(prev); } } } catch (e) {}
+  }
+}
+async function pollBtc() {
+  if (document.hidden) return;
+  const prev = curQuotes();
+  try {
+    const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT', { cache: 'no-store' });
+    if (!r.ok) throw new Error();
+    const j = await r.json(); btc = { price: +j.lastPrice, chg: +j.priceChangePercent, t: Date.now() };
+  } catch (e) {
+    try { const r = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot', { cache: 'no-store' }); const j = await r.json(); btc = { price: +j.data.amount, chg: btc ? btc.chg : null, t: Date.now() }; } catch (e2) { return; }
+  }
+  refreshQuotes(prev);
+}
+setInterval(() => pollLive(false), 10e3);
+setInterval(pollBtc, 15e3);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { pollLive(true); pollBtc(); pollFriss(true); } });
+
+// ---------- Friss hírek (percenként frissül a GitHubon, az app 30 mp-enként kérdezi) ----------
+let friss = null, frissSeenAt = +(localStorage.getItem('hirapp-friss-seen') || 0), lastFrissFetch = 0;
+const SEC_IC = Object.fromEntries(SECTIONS.map((x) => [x[0], x[1]]));
+function ago(t) { const m = Math.round((Date.now() - Date.parse(t)) / 60e3); return m < 1 ? 'most' : m < 60 ? m + ' perce' : m < 1440 ? Math.floor(m / 60) + ' órája' : new Date(t).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' }); }
+function frissHTML() {
+  if (!friss || !friss.items || !friss.items.length) return '<p style="color:var(--tx2)">A friss hírek percenként frissülnek – hamarosan itt lesznek.</p>';
+  return liveBadgeT(friss.updated) + friss.items.map((it) => '<a class="fi' + (Date.parse(it.t) > frissSeenAt && frissSeenAt ? ' uj' : '') + '" href="' + esc(it.link) + '" target="_blank" rel="noopener"><div class="ic">' + (SEC_IC[it.sec] || '📰') + '</div><div><div class="m">' + esc(it.source) + ' · ' + ago(it.t) + '</div><div class="tt">' + esc(it.title) + '</div></div></a>').join('');
+}
+function liveBadgeT(u) { const fresh = Date.now() - Date.parse(u) < 15 * 60e3; return '<div class="live' + (fresh ? '' : ' old') + '"><i></i>' + (fresh ? 'Élő · ' : '') + 'frissítve: ' + new Date(u).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }) + '</div>'; }
+async function pollFriss(force) {
+  if (document.hidden && !force) return;
+  const src = liveSource(); if (!src || (!force && Date.now() - lastFrissFetch < 25e3)) return;
+  lastFrissFetch = Date.now();
+  try {
+    const r = await fetch(src.replace('quotes.json', 'hirek.json') + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return; const j = await r.json();
+    if (friss && j.updated === friss.updated) { if (view === 'friss') $('#frissList').innerHTML = frissHTML(); return; }
+    friss = j; if (view === 'friss' && $('#frissList')) $('#frissList').innerHTML = frissHTML();
+  } catch (e) {}
+}
+setInterval(() => pollFriss(false), 10e3);
+let lastSumFetch = Date.now();
+setInterval(() => { if (!document.hidden && !viewingArchive && Date.now() - lastSumFetch > 5 * 60e3) { lastSumFetch = Date.now(); getJSON('data/latest.json').then((d) => { if (!doc || d.created !== doc.created) { doc = d; if (view === 'news') render(); } }).catch(() => {}); } }, 30e3);
 
 // navigáció
 $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (!b) return; tab = b.dataset.t; render(); scrollTo({ top: 0, behavior: 'smooth' }); });
@@ -210,7 +304,9 @@ document.querySelectorAll('.bar button').forEach((b) => b.addEventListener('clic
   const v = b.dataset.v;
   if (v === 'archive') return openArchive();
   if (v === 'settings') return openSettings();
+  if (view === 'friss' && v !== 'friss') { frissSeenAt = Date.now(); localStorage.setItem('hirapp-friss-seen', String(frissSeenAt)); }
   view = v; document.querySelectorAll('.bar button').forEach((x) => x.classList.toggle('on', x === b)); render(); scrollTo({ top: 0 });
+  if (v === 'friss') pollFriss(true);
 }));
 document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('.sheet').classList.remove('open')));
 document.querySelectorAll('.sheet').forEach((s) => s.addEventListener('click', (e) => { if (e.target === s) s.classList.remove('open'); }));
@@ -307,7 +403,7 @@ async function enablePush() {
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW:', e));
-load();
+load().then(() => { pollLive(true); pollBtc(); pollFriss(true); });
 </script>
 </body>
 </html>

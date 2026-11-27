@@ -63,9 +63,10 @@ Több telefon/tablet: mindegyiken kapcsold be, és a kapott szövegeket tedd sz�
 
 ---
 
-## Értesítés minden új hírről
-A `friss.yml` feladat 5 percenként megnézi a hírforrásokat, és **minden új hírről** külön értesítést küld (éjjel-nappal); koppintásra megnyílik a cikk.
-Egyszerre legfeljebb 20 értesítés megy, ha ennél több új hír jött, egy összesítő értesítés is érkezik. Az első futás csak megjegyzi a meglévő híreket.
+## Folyamatos frissítés
+A `friss.yml` feladat 5 percenként indul, és egy futás alatt (kb. 4,5 perc) **percenként** ellenőrzi a híreket és az árfolyamokat:
+minden új, témába vágó hírről értesítést küld (éjjel-nappal, koppintásra megnyílik a cikk), és frissíti az alkalmazás **⚡ Friss** fülét és az árfolyamokat.
+Az alkalmazás 30 másodpercenként kéri le az újdonságokat; a bitcoin 15 másodpercenként frissül.
 Kikapcsolás: Actions → „Friss hírek értesítés” → jobb fent ••• → **Disable workflow**.
 
 ## Jó tudni
