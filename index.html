@@ -172,6 +172,41 @@ table.pt2 th:first-child,table.pt2 td:first-child{text-align:left;white-space:no
 #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111c;color:#fff;padding:8px 14px;border-radius:10px;font-size:14px;z-index:60;display:none}
 .skel{height:14px;border-radius:7px;background:linear-gradient(90deg,var(--line),var(--card),var(--line));background-size:200% 100%;animation:sh 1.2s infinite;margin:10px 0}
 @keyframes sh{to{background-position:-200% 0}}
+/* --- 3. kör: kezdőlap --- */
+.greet{display:flex;align-items:flex-end;justify-content:space-between;margin:2px 2px 12px}
+.greet h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.3px}
+.greet small{color:var(--tx2);font-size:14px}
+.dashrow{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}
+@media (min-width:560px){.dashrow{grid-template-columns:1fr 1.3fr}}
+.dash{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.08);transition:transform .15s}
+.dash:active{transform:scale(.98)}
+.dash .big{font-size:34px;line-height:1}
+.dash b{display:block;font-size:16px}.dash small{color:var(--tx2);font-size:13px}
+.dash.wx{background:linear-gradient(135deg,rgba(77,163,255,.18),rgba(77,163,255,.04)),var(--card)}
+.dash.mk{justify-content:space-between}
+.dash.mk>div{flex:1;text-align:center;min-width:0}
+.dash.mk>div+div{border-left:1px solid var(--line)}
+.dash.mk b{font-size:15px;margin:2px 0}.dash.mk span{font-size:12px;font-weight:700}
+.dash.pfmini{margin-bottom:14px}.dash.pfmini>span:first-child{font-size:26px}
+.foryou h2{color:var(--acc)}
+.top{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.top .rank{flex:none;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#ff8a3d,#e8452c);color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px}
+.top .g{flex:1;min-width:0}.top a{color:var(--tx);text-decoration:none}
+.top .tt{font-weight:650;line-height:1.35}.top .m{color:var(--tx2);font-size:12.5px;margin-top:3px}
+.top .cnt{flex:none;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:3px 8px;font-weight:800;font-size:13px;color:var(--acc)}
+.top.kw .rank{background:linear-gradient(135deg,#f5c542,#e09b00)}
+.kwb{display:inline-block;background:rgba(245,197,66,.2);color:#c98f00;border-radius:6px;padding:0 6px;margin-right:6px;font-size:12px;font-weight:800}
+.sec h2 .more{float:right;background:none;border:0;color:var(--acc);font-weight:700;font-size:14px;cursor:pointer;padding:0}
+.trends{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.trends::-webkit-scrollbar{display:none}
+.tchip{flex:none;border:1px solid var(--line);background:var(--bg2);color:var(--tx);border-radius:999px;padding:6px 12px;font-size:13.5px;font-weight:600;cursor:pointer}
+.tchip small{color:var(--tx2);font-weight:700;margin-left:2px}
+.tchip.hot{background:linear-gradient(135deg,rgba(255,138,61,.22),rgba(232,69,44,.12));border-color:rgba(232,69,44,.45)}
+.q .closed{font-size:10.5px;color:var(--tx2);margin-top:2px;font-weight:600}
+.stwarn{display:inline-flex;align-items:center;margin:4px 0 0;border:1px solid rgba(255,93,93,.5);background:rgba(255,93,93,.12);color:var(--down);border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:700;cursor:pointer}
+.sec{animation:fadeUp .35s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.sec{animation:none}}
 </style>
 </head>
 <body>
@@ -182,6 +217,7 @@ table.pt2 th:first-child,table.pt2 td:first-child{text-align:left;white-space:no
     <button class="ibtn" id="searchBtn" title="Keresés" aria-label="Keresés">🔍</button>
     <button class="ibtn" id="refresh" title="Frissítés" aria-label="Frissítés">⟳</button>
   </div>
+  <button id="stWarn" class="stwarn" style="display:none"></button>
   <div class="sub" id="meta"><span class="skel" style="width:160px;margin:2px 0"></span></div>
 </header>
 <div id="getApp" style="display:none"></div>
@@ -261,6 +297,7 @@ function render() {
   $('#tabs').style.display = tabs.length ? 'flex' : 'none';
   let h = '';
   if (view === 'news') {
+    if (tab === 'all' && !viewingArchive && typeof homeHTML === 'function') h += homeHTML();
     if (doc.headline && tab === 'all') h += '<div class="hero"><small>' + (doc.kind === 'het' ? 'A hét híre' : 'A nap híre') + '</small><p>' + esc(doc.headline) + '</p></div>';
     if (tab === 'all') h += '<div class="tts"><button class="btn sec2" id="ttsBtn">' + (speaking ? '⏹️ Felolvasás leállítása' : '🔊 Felolvasás') + '</button><button class="btn sec2" id="shareSum" style="flex:none;width:auto">📤</button></div>';
     if (tab === 'all' && weekly && !viewingArchive && Date.now() - Date.parse(weekly.created) < 4 * 86400e3) h += '<div class="wk" id="wkOpen"><span>📅</span><div><b>Heti összefoglaló</b><small>' + esc(weekly.headline || 'A hét legfontosabb eseményei') + '</small></div></div>';
@@ -279,7 +316,7 @@ function render() {
       h += '</section>';
     }
   } else if (view === 'friss') {
-    h += '<section class="sec"><h2>⚡ Friss hírek</h2><div class="seg" id="frissSeg"><button data-m="list" class="' + (frissMode === 'list' ? 'on' : '') + '">Időrendben</button><button data-m="cmp" class="' + (frissMode === 'cmp' ? 'on' : '') + '">Lapok összehasonlítása</button></div><div id="frissList">' + frissHTML() + '</div></section>';
+    h += '<section class="sec"><h2>⚡ Friss hírek</h2><div class="seg" id="frissSeg"><button data-m="list" class="' + (frissMode === 'list' ? 'on' : '') + '">Időrendben</button><button data-m="top" class="' + (frissMode === 'top' ? 'on' : '') + '">🔥 Legfontosabb</button><button data-m="cmp" class="' + (frissMode === 'cmp' ? 'on' : '') + '">Lapok</button></div><div id="frissList">' + frissHTML() + '</div></section>';
   } else if (view === 'saved') {
     h += '<section class="sec"><h2>🔖 Mentett hírek</h2><div id="savedList">' + savedHTML() + '</div></section>';
   } else if (view === 'quotes') {
@@ -293,7 +330,7 @@ function quotesHTML(groups) {
   for (const [g, t] of QGRP) {
     if (!groups.includes(g)) continue;
     const rows = curQuotes().filter((q) => q.grp === g); if (!rows.length) continue;
-    h += '<div class="qgrp">' + t + '</div><div class="qgrid">' + rows.map((q) => { const c = chgCls(q.chg); return '<div class="q' + (flash[q.name] ? ' flash-' + flash[q.name] : '') + '" data-sym="' + esc(q.sym || '') + '" data-name="' + esc(q.name) + '" role="button"><div class="n">' + esc(q.name) + '</div><div class="p">' + fmt(q.price) + ' <small>' + esc(q.unit || '') + '</small></div><div class="c ' + c + '">' + chgTxt(q.chg) + '</div>' + spark(q.spark, c) + '</div>'; }).join('') + '</div>';
+    h += '<div class="qgrp">' + t + '</div><div class="qgrid">' + rows.map((q) => { const c = chgCls(q.chg); return '<div class="q' + (flash[q.name] ? ' flash-' + flash[q.name] : '') + '" data-sym="' + esc(q.sym || '') + '" data-name="' + esc(q.name) + '" role="button"><div class="n">' + esc(q.name) + '</div><div class="p">' + fmt(q.price) + ' <small>' + esc(q.unit || '') + '</small></div><div class="c ' + c + '">' + chgTxt(q.chg) + '</div>' + (q.mt && Date.now() - q.mt * 1000 > 18 * 3600e3 ? '<div class="closed">🔒 zárva · utolsó: ' + new Date(q.mt * 1000).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric', weekday: 'short' }) + '</div>' : '') + spark(q.spark, c) + '</div>'; }).join('') + '</div>';
   }
   return h;
 }
@@ -359,7 +396,8 @@ function ago(t) { const m = Math.round((Date.now() - Date.parse(t)) / 60e3); ret
 function frissHTML() {
   if (!friss || !friss.items || !friss.items.length) return '<p style="color:var(--tx2)">A friss hírek percenként frissülnek – hamarosan itt lesznek.</p>';
   if (frissMode === 'cmp') return liveBadgeT(friss.updated) + compareHTML();
-  return liveBadgeT(friss.updated) + friss.items.slice(0, 120).map(itemHTML).join('');
+  if (frissMode === 'top') return liveBadgeT(friss.updated) + trendsHTML() + topHTML();
+  return liveBadgeT(friss.updated) + trendsHTML() + visibleItems().slice(0, 120).map(itemHTML).join('');
 }
 function liveBadgeT(u) { const fresh = Date.now() - Date.parse(u) < 15 * 60e3; return '<div class="live' + (fresh ? '' : ' old') + '"><i></i>' + (fresh ? 'Élő · ' : '') + 'frissítve: ' + new Date(u).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }) + '</div>'; }
 async function pollFriss(force) {
@@ -370,7 +408,8 @@ async function pollFriss(force) {
     const r = await fetch(src.replace('quotes.json', 'hirek.json') + '?t=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) return; const j = await r.json();
     if (friss && j.updated === friss.updated) { if (view === 'friss') $('#frissList').innerHTML = frissHTML(); return; }
-    friss = j; if (view === 'friss' && $('#frissList')) $('#frissList').innerHTML = frissHTML();
+    const first = !friss; friss = j; if (view === 'friss' && $('#frissList')) $('#frissList').innerHTML = frissHTML();
+    else if (view === 'news' && tab === 'all' && doc && !viewingArchive && (first || scrollY < 80)) { const y = scrollY; render(); scrollTo({ top: y }); }
   } catch (e) {}
 }
 setInterval(() => pollFriss(false), 10e3);
@@ -573,7 +612,7 @@ const hours = (sel) => [...Array(24)].map((_, h) => '<option value="' + h + '"' 
 function renderPanel() {
   const k = $('#sPanel').dataset.k, el = $('#panelBody'); let h = '';
   if (k === 'notif') {
-    h += '<h4 class="st">Értesítések</h4>' + sw('newsNotif', 'Új hírek (percenként)', S.newsNotif, 'Ha egy eseményről több lap ír, egy értesítés jön („+2” jelöléssel).') + sw('summary', 'Reggeli és esti összefoglaló', S.summary);
+    h += '<h4 class="st">Értesítések</h4>' + sw('newsNotif', 'Új hírek (percenként)', S.newsNotif, 'Ha egy eseményről több lap ír, egy értesítés jön („+2” jelöléssel).') + sw('summary', 'Reggeli és esti összefoglaló', S.summary) + sw('closeNotif', '🔔 Tőzsdezárás-összegzés', S.closeNotif, 'Hétköznap 17:10 körül: BUX, nagy papírok, EUR/HUF és a portfóliód napi eredménye. Ünnepnapon nem jön.');
     h += '<h4 class="st">Rovatok</h4>' + SECTIONS.map(([sk, ic, t]) => sw('sec:' + sk, ic + ' ' + t, S.sections[sk] !== false)).join('');
     h += '<h4 class="st">Lapok</h4>' + SOURCES.map((src) => sw('src:' + src, src, S.sources[src] !== false)).join('');
     h += '<h4 class="st">Csendes idő</h4>' + sw('quiet', '🌙 Csendes idő bekapcsolva', S.quiet.on, 'Ekkor csak a kulcsszavas hírek és az árfolyam-riasztások jönnek.') +
@@ -718,7 +757,7 @@ function doSearch() {
   if (raw.length < 2) { out.innerHTML = '<p style="color:var(--tx2);font-size:14px">Írj be legalább 2 betűt. Keres a friss hírekben (kb. az utolsó 1–2 nap), a mai összefoglalóban és az archívum címeiben.</p>'; return; }
   const words = raw.split(/\s+/).filter(Boolean), fw = words.map(fold), match = (t) => { const f = fold(t); return fw.every((w) => f.includes(w)); };
   let h = '', n = 0;
-  const fr = ((friss && friss.items) || []).filter((it) => match(it.title + ' ' + (it.d || ''))).slice(0, 40);
+  const fr = visibleItems().filter((it) => match(it.title + ' ' + (it.d || ''))).slice(0, 40);
   if (fr.length) { h += '<h4 class="st">Friss hírek (' + fr.length + ')</h4>' + fr.map((it) => '<a class="fi" href="' + esc(it.link) + '" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><div class="ic">' + (SEC_IC[it.sec] || '📰') + '</div><div><div class="m">' + esc(it.source) + ' · ' + ago(it.t) + '</div><div class="tt">' + hl(it.title, words) + '</div></div></a>').join(''); n += fr.length; }
   const pts = []; if (doc && doc.sections) for (const [k] of SECTIONS) for (const p of doc.sections[k] || []) if (match(p.text)) pts.push(p);
   if (pts.length) { h += '<h4 class="st">Összefoglaló</h4>' + pts.map((p) => '<div class="pt"><div class="dot"></div><div class="tx">' + hl(p.text, words) + '</div></div>').join(''); n += pts.length; }
@@ -808,7 +847,7 @@ document.addEventListener('click', (e) => { if (e.target.closest('#wkOpen') && w
 
 // ---------- Portfólió ----------
 let PF = (() => { try { return JSON.parse(localStorage.getItem('hirapp-pf') || '[]'); } catch (e) { return []; } })();
-const savePF = () => localStorage.setItem('hirapp-pf', JSON.stringify(PF));
+let savePF = () => localStorage.setItem('hirapp-pf', JSON.stringify(PF));
 function toHUF(unit) { // 1 egység ára → forintszorzó
   const q = (n) => { const x = curQuotes().find((y) => y.name === n); return x ? x.price : null; };
   const u = String(unit || '').trim();
@@ -982,6 +1021,178 @@ document.addEventListener('click', (e) => {
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW:', e));
 load().then(() => { pollLive(true); pollBtc(); pollFriss(true); setTimeout(showGetApp, 800); });
+
+// =====================================================================
+// 3. KÖR: kezdőlap (köszönés, időjárás, piaci sáv, neked szóló, legfontosabb), trendek, saját források,
+// tőzsdezárás-értesítés, szünnap-jelzés, időjárás, állapot oldal
+// =====================================================================
+SEC_IC.own = '⭐';
+if (!Array.isArray(S.feeds)) S.feeds = [];
+if (S.closeNotif === undefined) S.closeNotif = true;
+if (!PF.length && Array.isArray(S.pf) && S.pf.length) { PF = S.pf.slice(); localStorage.setItem('hirapp-pf', JSON.stringify(PF)); }
+S.pf = PF;   // a portfólió is szinkronizálódik (a tőzsdezárás-értesítéshez)
+const _savePF = savePF;
+savePF = function () { _savePF(); S.pf = PF; saveSettings(); };
+
+// a saját források hírei csak annál látszanak, aki felvette őket
+const visibleItems = () => ((friss && friss.items) || []).filter((it) => it.sec !== 'own' || S.feeds.some((f) => f.name === it.source));
+
+// ---------- Legfontosabb hírek (ahány lap írt róla) ----------
+function topClusters(hours = 24) {
+  const since = Date.now() - hours * 3600e3, cl = [];
+  for (const it of visibleItems()) {
+    if (Date.parse(it.t) < since) continue;
+    const tk = toks(it.title), c = cl.find((x) => simi(x.tk, tk));
+    if (c) { if (!c.items.some((y) => y.source === it.source)) c.items.push(it); } else cl.push({ tk, items: [it] });
+  }
+  return cl.map((c) => ({ ...c, score: c.items.length + (kwHit(c.items.map((x) => x.title).join(' ')) ? 1.5 : 0), t: Math.max(...c.items.map((x) => Date.parse(x.t))) }))
+    .sort((a, b) => b.score - a.score || b.t - a.t);
+}
+function topHTML(n = 25) {
+  const cl = topClusters().slice(0, n);
+  if (!cl.length) return '<p style="color:var(--tx2)">Még nincs elég hír – hamarosan itt lesz.</p>';
+  return '<p style="color:var(--tx2);font-size:13px;margin:0 0 6px">Az elmúlt 24 óra eseményei aszerint, hány lap írt róluk.</p>' + cl.map((c, i) => {
+    const it = c.items[0], kw = kwHit(c.items.map((x) => x.title).join(' '));
+    return '<div class="top' + (kw ? ' kw' : '') + '"><div class="rank">' + (i + 1) + '</div><div class="g"><a href="' + esc(it.link) + '" target="_blank" rel="noopener"><div class="tt">' + (kw ? '<span class="kwb">🔔 ' + esc(kw) + '</span>' : '') + esc(it.title) + '</div></a><div class="m">' + (SEC_IC[it.sec] || '📰') + ' ' + c.items.map((x) => esc(x.source)).join(', ') + ' · ' + ago(new Date(c.t).toISOString()) + '</div></div>' + (c.items.length > 1 ? '<div class="cnt" title="ennyi lap írt róla">' + c.items.length + '</div>' : '') + '</div>';
+  }).join('');
+}
+
+// ---------- Trendek ----------
+const TREND_STOP = new Set('magyar magyarorszag kormany budapest szerint ellen utan miatt eves ujabb tobb most fontos elso uj nagy kozott ezert lesz mint egyik video kepek percek orak napok szazalek millio milliard forint dollar euro elnok miniszter orszag'.split(' '));
+function trends() {
+  const now = Date.now(), recent = new Map(), base = new Map(), items = visibleItems().filter((x) => now - Date.parse(x.t) < 24 * 3600e3);
+  for (const it of items) {
+    const words = [...new Set(fold(it.title).replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter((w) => w.length >= 4 && !STOPW.has(w) && !TREND_STOP.has(w) && !/^\d+$/.test(w)))];
+    const tgt = now - Date.parse(it.t) < 3 * 3600e3 ? recent : base;
+    words.forEach((w) => tgt.set(w, (tgt.get(w) || 0) + 1));
+  }
+  const all = new Map(); [recent, base].forEach((m) => m.forEach((v, k) => all.set(k, (all.get(k) || 0) + v)));
+  const hot = [...recent.entries()].filter(([w, n]) => n >= 2 && n / ((base.get(w) || 0) + 1) >= 1.5).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w]) => w);
+  const top = [...all.entries()].filter(([w, n]) => n >= 3 && !hot.includes(w)).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([w, n]) => [w, n]);
+  // a szavakat az eredeti (ékezetes) alakjukban mutatjuk
+  const orig = (w) => { for (const it of items) { const m = it.title.split(/[\s,.:;!?„”"()]+/).find((x) => fold(x).replace(/[^a-z0-9-]/g, '') === w); if (m) return m.replace(/[^\p{L}\p{N}-]/gu, ''); } return w; };
+  return { hot: hot.map(orig), top: top.map(([w, n]) => [orig(w), n]) };
+}
+function trendsHTML() {
+  const t = trends(); if (!t.hot.length && !t.top.length) return '';
+  return '<div class="trends">' + t.hot.map((w) => '<button class="tchip hot" data-tr="' + esc(w) + '">🔥 ' + esc(w) + '</button>').join('') + t.top.map(([w, n]) => '<button class="tchip" data-tr="' + esc(w) + '">' + esc(w) + ' <small>' + n + '</small></button>').join('') + '</div>';
+}
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-tr]'); if (!b) return; $('#sSearch').classList.add('open'); $('#q').value = b.dataset.tr; doSearch(); });
+
+// ---------- Neked szóló hírek ----------
+function forYou() {
+  const names = new Set(S.keywords.concat(S.watch.map((w) => w.name), PF.map((h) => h.name)).filter((x) => x && !/\//.test(x) && x.length >= 3));
+  if (!names.size) return [];
+  const words = [...names].map(fold);
+  return visibleItems().filter((it) => { const t = fold(it.title + ' ' + (it.d || '')); return words.some((w) => new RegExp('(^|[^a-z0-9])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(t)); }).slice(0, 5);
+}
+
+// ---------- Időjárás (Open-Meteo, ingyenes) ----------
+let WX = (() => { try { return JSON.parse(localStorage.getItem('hirapp-wx') || 'null'); } catch (e) { return null; } })(), wxData = null, wxT = 0;
+const WMO = (c) => c === 0 ? ['☀️', 'derült'] : c <= 2 ? ['🌤️', 'gyengén felhős'] : c === 3 ? ['☁️', 'borult'] : c <= 48 ? ['🌫️', 'köd'] : c <= 57 ? ['🌦️', 'szitálás'] : c <= 67 ? ['🌧️', 'eső'] : c <= 77 ? ['❄️', 'havazás'] : c <= 82 ? ['🌦️', 'zápor'] : c <= 86 ? ['🌨️', 'hózápor'] : ['⛈️', 'zivatar'];
+async function loadWx(force) {
+  if (!WX || (!force && Date.now() - wxT < 20 * 60e3)) return;
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + WX.lat + '&longitude=' + WX.lon + '&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Europe%2FBudapest&forecast_days=2');
+    if (r.ok) { wxData = await r.json(); wxT = Date.now(); if (view === 'news' && $('#wxCard')) $('#wxCard').outerHTML = wxHTML(); }
+  } catch (e) {}
+}
+function wxHTML() {
+  if (!WX) return '<div class="dash wx" id="wxCard" data-open="wx"><span class="big">🌤️</span><div><b>Időjárás</b><small>Koppints, és add meg a városod</small></div></div>';
+  if (!wxData || !wxData.current) return '<div class="dash wx" id="wxCard" data-open="wx"><span class="big">⏳</span><div><b>' + esc(WX.name) + '</b><small>Időjárás betöltése…</small></div></div>';
+  const c = wxData.current, d = wxData.daily, [ic, tx] = WMO(c.weather_code);
+  return '<div class="dash wx" id="wxCard" data-open="wx"><span class="big">' + ic + '</span><div><b>' + Math.round(c.temperature_2m) + '°C · ' + esc(WX.name) + '</b><small>' + tx + ' · ma ' + Math.round(d.temperature_2m_min[0]) + '…' + Math.round(d.temperature_2m_max[0]) + '°C' + (d.precipitation_probability_max[0] != null ? ' · eső ' + d.precipitation_probability_max[0] + '%' : '') + '</small></div></div>';
+}
+EXTRA_PANELS.wx = () => '<p style="color:var(--tx2);font-size:14px;margin:0">Keresd meg a településed – az időjárás a kezdőlapon jelenik meg.</p><div class="row"><input class="inp" id="wxQ" placeholder="pl. Debrecen" value="' + esc(WX ? WX.name : '') + '"><button class="btn" id="wxFind" style="flex:none;width:auto;margin:4px 0">Keresés</button></div><div id="wxRes"></div>' + (WX ? '<button class="btn sec2" id="wxDel">Időjárás kikapcsolása</button>' : '') + '<p class="note" style="text-align:left">Forrás: Open-Meteo (ingyenes időjárás-szolgáltatás).</p>';
+document.addEventListener('click', async (e) => {
+  if (e.target.closest('[data-open="wx"]')) { openPanel('wx'); return; }
+  if (e.target.closest('#wxFind')) {
+    $('#wxRes').innerHTML = '<div class="skel"></div>';
+    try {
+      const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=6&language=hu&format=json&name=' + encodeURIComponent($('#wxQ').value.trim()));
+      const j = await r.json(), res = j.results || [];
+      $('#wxRes').innerHTML = res.length ? res.map((x) => '<button class="arch" data-wx=\'' + esc(JSON.stringify({ name: x.name, lat: x.latitude, lon: x.longitude })) + '\'><b>' + esc(x.name) + '</b><span>' + esc([x.admin1, x.country].filter(Boolean).join(', ')) + '</span></button>').join('') : '<p style="color:var(--tx2)">Nincs ilyen település.</p>';
+    } catch (err) { $('#wxRes').innerHTML = '<p style="color:var(--tx2)">A keresés nem sikerült.</p>'; }
+    return;
+  }
+  const w = e.target.closest('[data-wx]'); if (w) { WX = JSON.parse(w.dataset.wx); localStorage.setItem('hirapp-wx', JSON.stringify(WX)); wxData = null; $('#sPanel').classList.remove('open'); await loadWx(true); if (view === 'news') render(); toast('Mentve: ' + WX.name); return; }
+  if (e.target.closest('#wxDel')) { WX = null; localStorage.removeItem('hirapp-wx'); $('#sPanel').classList.remove('open'); if (view === 'news') render(); }
+});
+setInterval(() => { if (!document.hidden) loadWx(); }, 60e3);
+
+// ---------- Kezdőlap ----------
+function greeting() { const h = +new Date().toLocaleString('en-GB', { timeZone: 'Europe/Budapest', hour: '2-digit', hour12: false }).slice(0, 2); return h < 5 ? 'Jó éjszakát' : h < 10 ? 'Jó reggelt' : h < 18 ? 'Szép napot' : 'Jó estét'; }
+function homeHTML() {
+  const today = new Date().toLocaleDateString('hu-HU', { weekday: 'long', month: 'long', day: 'numeric' });
+  let h = '<div class="greet"><div><h2>' + greeting() + '! 👋</h2><small>' + esc(today[0].toUpperCase() + today.slice(1)) + '</small></div></div>';
+  h += '<div class="dashrow">' + wxHTML();
+  const q = (n) => curQuotes().find((x) => x.name === n), strip = ['BUX', 'EUR/HUF', 'Bitcoin'].map(q).filter(Boolean);
+  if (strip.length) h += '<div class="dash mk" data-go="quotes">' + strip.map((x) => '<div><small>' + esc(x.name) + '</small><b>' + fmt(x.price) + '</b><span class="' + chgCls(x.chg) + '">' + chgTxt(x.chg) + '</span></div>').join('') + '</div>';
+  h += '</div>';
+  if (PF.length) { const c = pfCalc(); h += '<div class="dash pfmini" data-go="quotes"><span>💼</span><div><small>Portfólióm</small><b>' + huf(c.val) + '</b></div><span class="' + (c.day >= 0 ? 'up' : 'down') + '" style="margin-left:auto;font-weight:800">' + sgn(c.day) + '</span></div>'; }
+  const fy = forYou();
+  if (fy.length) h += '<section class="sec foryou"><h2>🎯 Neked szóló hírek</h2>' + fy.map(itemHTML).join('') + '</section>';
+  const top = topClusters().slice(0, 3);
+  if (top.length) h += '<section class="sec"><h2>🔥 Most a legfontosabb <button class="more" data-go="friss-top">Mind ›</button></h2>' + top.map((c, i) => { const it = c.items[0]; return '<div class="top"><div class="rank">' + (i + 1) + '</div><div class="g"><a href="' + esc(it.link) + '" target="_blank" rel="noopener"><div class="tt">' + esc(it.title) + '</div></a><div class="m">' + c.items.map((x) => esc(x.source)).slice(0, 4).join(', ') + (c.items.length > 4 ? ' +' + (c.items.length - 4) : '') + '</div></div>' + (c.items.length > 1 ? '<div class="cnt">' + c.items.length + '</div>' : '') + '</div>'; }).join('') + '</section>';
+  return h;
+}
+document.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-go]'); if (!g) return;
+  const v = g.dataset.go === 'friss-top' ? 'friss' : g.dataset.go; if (g.dataset.go === 'friss-top') frissMode = 'top';
+  const b = document.querySelector('.bar button[data-v="' + v + '"]'); if (b) b.click();
+});
+
+// ---------- Saját források ----------
+EXTRA_PANELS.feeds = () => '<p style="color:var(--tx2);font-size:14px;margin:0">Bármelyik oldal hírfolyamát (RSS) hozzáadhatod – megyei lap, szakmai portál, blog, külföldi lap. A hírei a Friss fülön ⭐ jellel jelennek meg, és értesítést is kapsz róluk (témaszűrés nélkül). Az RSS-cím legtöbbször az oldal alján található („RSS”), vagy próbáld: <b>oldal.hu/rss</b>, <b>oldal.hu/feed</b>.</p>' +
+  '<input class="inp" id="fdName" placeholder="név, pl. Szeged.hu"><input class="inp" id="fdUrl" placeholder="https://…/rss" inputmode="url"><button class="btn" id="fdAdd">Hozzáadás</button><h4 class="st">Saját forrásaid</h4>' +
+  (S.feeds.map((f, i) => { const st = statusData && statusData.feeds && statusData.feeds[f.name]; return '<div class="li"><div class="g">' + esc(f.name) + '<small>' + esc(f.url) + (st ? (st.ok ? ' · ✅ működik (' + st.n + ' friss hír)' : ' · ⚠️ ' + esc(st.err)) : ' · ⏳ ellenőrzés 1–5 percen belül') + '</small></div><button class="del" data-fddel="' + i + '">🗑️</button></div>'; }).join('') || '<p style="color:var(--tx2);font-size:14px">Még nincs saját forrás.</p>') +
+  '<p class="note" style="text-align:left">A saját források hírei a nyilvános repóba is felkerülnek (mint a többi hír), de csak a te alkalmazásodban jelennek meg. Kell hozzá a ☁️ Szinkronizálás.</p>';
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('#fdAdd, [data-fddel]'); if (!t) return;
+  if (t.id === 'fdAdd') {
+    const url = $('#fdUrl').value.trim(); let name = $('#fdName').value.trim();
+    if (!/^https?:\/\/\S+\.\S+/.test(url)) return toast('Adj meg egy érvényes címet (https://…)');
+    if (!name) { try { name = new URL(url).hostname.replace(/^www\./, ''); } catch (err) { name = url; } }
+    if (S.feeds.some((f) => f.name === name)) name += ' (2)';
+    S.feeds.push({ name, url }); toast('Hozzáadva – 1–5 perc múlva jönnek a hírei');
+  } else S.feeds.splice(+t.dataset.fddel, 1);
+  saveSettings(); renderPanel();
+});
+
+// ---------- Állapot oldal ----------
+let statusData = null;
+async function loadStatus() { try { statusData = await getRaw('allapot.json', 60e3); } catch (e) {} return statusData; }
+EXTRA_PANELS.status = () => '<div id="stBox"><div class="skel"></div><div class="skel"></div></div>';
+EXTRA_AFTER.status = async () => {
+  const d = await loadStatus();
+  if (!d) { $('#stBox').innerHTML = '<p style="color:var(--down)">⚠️ Az állapotfájl nem érhető el. Ellenőrizd a GitHubon az Actions fülön a „Friss hírek értesítés” futásait.</p>'; return; }
+  const age = (Date.now() - Date.parse(d.updated)) / 60e3, ok = age < 20;
+  const fe = Object.entries(d.feeds || {}), qu = Object.entries(d.quotes || {}), fOk = fe.filter(([, v]) => v.ok).length, qOk = qu.filter(([, v]) => v.ok).length;
+  const row = (icon, title, sub, good) => '<div class="li"><div style="font-size:20px">' + icon + '</div><div class="g">' + title + '<small>' + sub + '</small></div><div style="font-size:18px">' + (good ? '✅' : '⚠️') + '</div></div>';
+  let h = '<div class="hero" style="background:' + (ok ? 'linear-gradient(135deg,#1f7a46,#14532f)' : 'linear-gradient(135deg,#a33,#611)') + '"><small>Rendszer állapota</small><p>' + (ok ? 'Minden működik' : 'A frissítés ' + Math.round(age) + ' perce nem futott') + '</p></div>';
+  h += row('⏱️', 'Utolsó frissítés', new Date(d.updated).toLocaleString('hu-HU') + ' (' + (age < 1 ? 'most' : Math.round(age) + ' perce') + ')', ok);
+  h += row('📰', 'Hírforrások', fOk + ' / ' + fe.length + ' működik', fOk === fe.length);
+  h += row('📈', 'Árfolyamok', qOk + ' / ' + qu.length + ' működik', qOk === qu.length);
+  h += row('🔔', 'Mai értesítések', (d.push && d.push.date === new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Budapest' }) ? d.push.n : 0) + ' db · ' + d.devices + ' készülék (' + d.synced + ' szinkronizálva)', d.devices > 0);
+  const dd = d.data || {};
+  h += row('🗂️', 'Adatok', dd.hirek + ' friss hír · ' + dd.grafikon + ' grafikon · ' + dd.naptar + ' naptáresemény · ' + dd.mutatok + ' mutató · ' + dd.kutatasok + ' kutatás', dd.hirek > 0);
+  const bad = fe.filter(([, v]) => !v.ok).concat(qu.filter(([, v]) => !v.ok));
+  if (bad.length) h += '<h4 class="st">Nem működik</h4>' + bad.map(([k, v]) => '<div class="li"><div class="g">' + esc(k) + '<small>' + esc(v.err || '') + '</small></div></div>').join('');
+  if ((d.errors || []).length) h += '<h4 class="st">Legutóbbi hibák</h4>' + d.errors.slice(0, 5).map((x) => '<div class="li"><div class="g"><small>' + new Date(x.t).toLocaleString('hu-HU') + '</small>' + esc(x.m) + '</div></div>').join('');
+  h += '<h4 class="st">Hírforrások részletesen</h4>' + fe.map(([k, v]) => '<div class="li"><div class="g">' + esc(k) + '<small>' + (v.ok ? v.n + ' friss hír' : esc(v.err || '')) + '</small></div><div>' + (v.ok ? '✅' : '⚠️') + '</div></div>').join('');
+  h += '<p class="note" style="text-align:left">Ha valami tartósan ⚠️, küldj róla képet – általában egy lap megváltoztatta a hírfolyama címét.</p>';
+  $('#stBox').innerHTML = h;
+};
+// figyelmeztetés a fejlécben, ha a frissítés leállt
+setInterval(async () => { if (document.hidden) return; const d = await loadStatus(); const st = $('#stWarn'); if (!d || !st) return; const age = (Date.now() - Date.parse(d.updated)) / 60e3; st.style.display = age > 30 ? 'inline-flex' : 'none'; st.textContent = '⚠️ ' + Math.round(age) + ' perce nincs frissítés'; }, 60e3);
+
+// új csempék a Több menübe (az elejére a kezdőlaphoz kapcsolódók)
+TILES.splice(5, 0, ['feeds', '➕', 'Saját források'], ['wx', '🌤️', 'Időjárás'], ['status', '🩺', 'Állapot']);
+
+document.addEventListener('click', (e) => { if (e.target.closest('#stWarn')) openPanel('status'); });
+loadWx(); loadStatus().then(() => { const d = statusData, st = $('#stWarn'); if (d && st) { const age = (Date.now() - Date.parse(d.updated)) / 60e3; st.style.display = age > 30 ? 'inline-flex' : 'none'; st.textContent = '⚠️ ' + Math.round(age) + ' perce nincs frissítés'; } });
+if (view === 'news' && doc) render();
+
 </script>
 </body>
 </html>

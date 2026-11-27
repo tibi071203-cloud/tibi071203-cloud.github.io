@@ -51,3 +51,17 @@ Ha a kulcs lejár, készíts egy újat, és illeszd be ugyanide.
 | **📤 gomb** | Megosztás: egy hír (Friss fül) vagy az egész összefoglaló (Hírek fül) elküldése Messengeren, Viberen, e-mailben stb. | |
 | **☰ Több → 🔤 Megjelenés** | Téma (automatikus / világos / sötét) és betűméret (kicsi – nagyon nagy). | Csak ezen a telefonon. |
 | **☰ Több → 🧠 Napi kvíz** | Claude-kulccsal este 5 kérdés a nap híreiből, magyarázattal. Kulcs nélkül: „Melyik lap hozta ezt a hírt?” kérdések a friss hírekből. | Az „Új kör” gombbal újrakezdheted. |
+
+## Újabb funkciók (3. kör) + új kezdőlap
+
+| Hol találod | Mit tud | Mire figyelj |
+|---|---|---|
+| **Hírek → Mind (kezdőlap)** | Köszönés és dátum, időjárás, mini piaci sáv (BUX, EUR/HUF, Bitcoin), a portfóliód értéke, „Neked szóló hírek”, „Most a legfontosabb” top 3, alatta a napi összefoglaló. A kártyákra koppintva a megfelelő oldalra ugrik. | |
+| **Friss → 🔥 Legfontosabb** | Az elmúlt 24 óra eseményei aszerint, hány lap írt róluk (a szám a jobb oldalon). A kulcsszavas események előrébb kerülnek. | |
+| **Friss → trendek (a lista tetején)** | 🔥 = most hirtelen sokat emlegetett szavak, a többi = a nap leggyakoribb témái. Koppintásra rákeres. | Kevés hír esetén üres lehet. |
+| **🎯 Neked szóló hírek** | Azok a friss hírek, amelyekben szerepel a kulcsszavad, a figyelőlistád vagy a portfóliód valamelyik eleme (pl. „OTP”). | Kulcsszó / figyelőlista / portfólió nélkül nem jelenik meg. |
+| **☰ Több → ➕ Saját források** | Bármelyik oldal RSS-hírfolyamát hozzáadhatod. Hírei ⭐ jellel a Friss fülön jelennek meg, és értesítést kapsz róluk (témaszűrés nélkül). A listában látszik, működik-e. | Kell hozzá a ☁️ Szinkronizálás. Az első hírek 1–5 perc múlva jönnek. A hírek a nyilvános repóba is bekerülnek, de csak nálad látszanak. |
+| **🔔 Tőzsdezárás-összegzés** | Hétköznap kb. 17:10 és 18:00 között egy értesítés: BUX, OTP, MOL, Richter, Telekom, EUR/HUF napi változása és a portfóliód mai eredménye forintban. | Ki-be kapcsolható: ☰ Több → 🔔 Értesítések. Ünnepnapon (nincs kereskedés) nem jön. A portfólió szinkronizálva kerül át. |
+| **Árfolyamok → 🔒 zárva** | Ha egy piacon nincs kereskedés (hétvége, ünnep), a kártyán látszik, mikor volt az utolsó kötés. | |
+| **☰ Több → 🌤️ Időjárás** | Keresd meg a településed; a kezdőlapon látszik a hőmérséklet, az időjárás, a napi min/max és az eső esélye. | Ingyenes Open-Meteo adat, 20 percenként frissül. |
+| **☰ Több → 🩺 Állapot** | Megmutatja, mikor futott utoljára a frissítés, melyik hírforrás és árfolyam működik, hány értesítés ment ki ma, és a legutóbbi hibákat. Ha 30 percnél régebben nem volt frissítés, a fejlécben piros ⚠️ jelzés jelenik meg (koppintásra ide visz). | Ha tartósan ⚠️, nézd meg a GitHubon az Actions fület, vagy küldj képet. |

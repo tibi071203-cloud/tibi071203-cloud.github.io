@@ -15,6 +15,9 @@ const DEFAULTS = {
   keywords: [],
   watch: [],                             // [{ sym: 'TSLA', name: 'Tesla' }]
   alerts: [],                            // [{ id, name, kind: 'above'|'below'|'move', value }]
+  feeds: [],                             // saját források: [{ name, url }]
+  pf: [],                                // portfólió: [{ name, qty, buy }]
+  closeNotif: true,                      // hétköznap tőzsdezárás-összegzés
 };
 
 const deviceId = (cfg) => crypto.createHash('sha256').update(String(cfg && cfg.sub && cfg.sub.endpoint || '')).digest('hex').slice(0, 16);
@@ -39,6 +42,8 @@ function merge(s) {
   o.keywords = (Array.isArray(o.keywords) ? o.keywords : []).map(String).map((x) => x.trim()).filter(Boolean).slice(0, 50);
   o.watch = (Array.isArray(o.watch) ? o.watch : []).filter((w) => w && w.sym).slice(0, 20).map((w) => ({ sym: String(w.sym).trim().toUpperCase(), name: String(w.name || w.sym).trim() }));
   o.alerts = (Array.isArray(o.alerts) ? o.alerts : []).filter((a) => a && a.name && ['above', 'below', 'move'].includes(a.kind) && isFinite(+a.value)).slice(0, 30);
+  o.feeds = (Array.isArray(o.feeds) ? o.feeds : []).filter((f) => f && /^https?:\/\//i.test(String(f.url || ''))).slice(0, 15).map((f) => ({ name: String(f.name || '').trim().slice(0, 40) || new URL(f.url).hostname, url: String(f.url).trim() }));
+  o.pf = (Array.isArray(o.pf) ? o.pf : []).filter((h) => h && h.name && +h.qty > 0).slice(0, 50).map((h) => ({ name: String(h.name), qty: +h.qty, buy: +h.buy || 0 }));
   return o;
 }
 
@@ -53,7 +58,7 @@ async function loadAll(cfgs, get) {
       else if (repo) { const r = await get('https://raw.githubusercontent.com/' + repo + '/beallitasok/' + id + '.enc?t=' + Date.now()); if (r.ok) txt = await r.text(); }
       if (txt) s = decrypt(c, txt);
     } catch (e) { console.warn('Beállítás nem olvasható (' + id + '):', e.message); }
-    out.set(id, merge(s));
+    const m = merge(s); m._synced = !!s; out.set(id, m);
   }
   return out;
 }

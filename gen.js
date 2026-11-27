@@ -61,13 +61,21 @@ function parseFeed(xml, source) {
   }
   return out;
 }
+// Állapotnapló az alkalmazás „Állapot” oldalához: melyik forrás / árfolyam működik
+const STATUS = { feeds: {}, quotes: {} };
 async function readFeeds(list, hours) {
   const since = Date.now() - hours * 3600e3, out = [], seen = new Set();
   const res = await Promise.allSettled(list.map(async ([name, url]) => {
     const r = await get(url); if (!r.ok) throw new Error('HTTP ' + r.status);
-    return parseFeed(await r.text(), name).filter((it) => !it.date || Date.parse(it.date) >= since).slice(0, 12);
+    const all = parseFeed(await r.text(), name);
+    if (!all.length) throw new Error('üres vagy nem RSS');
+    return all.filter((it) => !it.date || Date.parse(it.date) >= since).slice(0, 12);
   }));
-  res.forEach((r, i) => { if (r.status === 'fulfilled') out.push(...r.value); else console.warn('Forrás hiba:', list[i][0], r.reason && r.reason.message); });
+  res.forEach((r, i) => {
+    const nm = list[i][0];
+    if (r.status === 'fulfilled') { out.push(...r.value); STATUS.feeds[nm] = { ok: true, n: r.value.length, t: Date.now() }; }
+    else { console.warn('Forrás hiba:', nm, r.reason && r.reason.message); STATUS.feeds[nm] = { ok: false, err: String(r.reason && r.reason.message || r.reason).slice(0, 80), t: Date.now() }; }
+  });
   return out.filter((it) => { const k = it.title.toLowerCase().slice(0, 60); if (seen.has(k)) return false; seen.add(k); return true; });
 }
 async function readQuotes(extra = []) {   // extra: a figyelőlistás szimbólumok [név, szimbólum, 'wl']
@@ -78,8 +86,9 @@ async function readQuotes(extra = []) {   // extra: a figyelőlistás szimbólum
     const res0 = (await r.json()).chart.result[0], m = res0.meta;
     const closes = (res0.indicators.quote[0].close || []).filter((x) => x != null);
     const ref = closes.length >= 2 ? closes[closes.length - 2] : m.chartPreviousClose;
-    return { name, sym, grp, price: m.regularMarketPrice, chg: ref ? (m.regularMarketPrice / ref - 1) * 100 : null, unit: sym.startsWith('^') ? 'pont' : (grp === 'fx' ? 'Ft' : m.currency || ''), spark: closes.slice(-20).map((x) => +x.toFixed(4)) };
+    return { name, sym, grp, mt: m.regularMarketTime || null, price: m.regularMarketPrice, chg: ref ? (m.regularMarketPrice / ref - 1) * 100 : null, unit: sym.startsWith('^') ? 'pont' : (grp === 'fx' ? 'Ft' : m.currency || ''), spark: closes.slice(-20).map((x) => +x.toFixed(4)) };
   }));
+  res.forEach((r, i) => { STATUS.quotes[list[i][0]] = r.status === 'fulfilled' ? { ok: true, t: Date.now() } : { ok: false, err: String(r.reason && r.reason.message || r.reason).slice(0, 80), t: Date.now() }; });
   return res.map((r, i) => (r.status === 'fulfilled' ? r.value : (console.warn('Árfolyam hiba:', list[i][0], r.reason && r.reason.message), null))).filter(Boolean);
 }
 
@@ -270,7 +279,7 @@ async function notify(doc) {
 }
 
 const bpHour = () => +new Date().toLocaleString('en-GB', { timeZone: TZ, hour: '2-digit', hour12: false }).slice(0, 2);
-module.exports = { FEEDS, SECTIONS, QUOTES, readFeeds, readQuotes, sendPush, sendPushDevice, pushConfigs, get };
+module.exports = { STATUS, FEEDS, SECTIONS, QUOTES, readFeeds, readQuotes, sendPush, sendPushDevice, pushConfigs, get };
 if (require.main === module) (async () => {
   let mode = (process.argv[2] || 'auto').toLowerCase();
   if (mode === 'auto') {
