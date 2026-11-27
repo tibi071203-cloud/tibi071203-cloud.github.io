@@ -63,6 +63,11 @@ Több telefon/tablet: mindegyiken kapcsold be, és a kapott szövegeket tedd sz�
 
 ---
 
+## Értesítés minden új hírről
+A `friss.yml` feladat 5 percenként megnézi a hírforrásokat, és **minden új hírről** külön értesítést küld (éjjel-nappal); koppintásra megnyílik a cikk.
+Egyszerre legfeljebb 20 értesítés megy, ha ennél több új hír jött, egy összesítő értesítés is érkezik. Az első futás csak megjegyzi a meglévő híreket.
+Kikapcsolás: Actions → „Friss hírek értesítés” → jobb fent ••• → **Disable workflow**.
+
 ## Jó tudni
 - A GitHub időzítése néha 5–20 percet késik, így az összefoglaló 7:00–7:30 / 18:00–18:30 között érkezik.
 - Ha a repóban 60 napig semmi nem változik, a GitHub leállíthatja az időzítést. Mivel az alkalmazás minden nap ment új híreket, ez általában nem fordul elő; ha mégis, az Actions fülön egy gombbal újra bekapcsolható.

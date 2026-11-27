@@ -1,0 +1,42 @@
+name: Friss hírek értesítés
+
+# 5 percenként megnézi a hírforrásokat, és minden új hírről értesítést küld (éjjel-nappal).
+# (Ennél gyakrabban a GitHub nem futtat; terhelés esetén néha 5–15 perc is lehet.)
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: friss
+  cancel-in-progress: false
+
+jobs:
+  friss:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - name: Látott hírek betöltése
+        uses: actions/cache/restore@v4
+        with:
+          path: seen.json
+          key: seen-${{ github.run_id }}
+          restore-keys: seen-
+      - name: Új hírek keresése és értesítés
+        env:
+          PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
+          APP_URL: https://${{ github.repository_owner }}.github.io/
+        run: node friss.js
+      - name: Látott hírek mentése
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: seen.json
+          key: seen-${{ github.run_id }}

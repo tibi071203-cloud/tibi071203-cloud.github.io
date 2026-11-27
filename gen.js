@@ -158,6 +158,22 @@ function save(doc) {
   fs.writeFileSync(path.join(DATA, 'index.json'), JSON.stringify(idx));
 }
 
+// Értesítés küldése minden beállított készülékre (PUSH_CONFIG)
+function pushConfigs() {
+  try { const raw = (process.env.PUSH_CONFIG || '').trim(); if (!raw) return []; const j = JSON.parse(raw); return Array.isArray(j) ? j : [j]; }
+  catch (e) { console.warn('PUSH_CONFIG nem érvényes JSON:', e.message); return []; }
+}
+async function sendPush(payloads, ttl = 3600) {
+  const cfgs = pushConfigs(); if (!cfgs.length) { console.log('Nincs beállítva értesítés (PUSH_CONFIG).'); return 0; }
+  let webpush; try { webpush = require('web-push'); } catch (e) { console.warn('A web-push csomag hiányzik (npm install).'); return 0; }
+  let n = 0;
+  for (const c of cfgs) for (const pl of payloads) {
+    try { webpush.setVapidDetails('mailto:hirapp@example.com', c.vapidPublic, c.vapidPrivate); await webpush.sendNotification(c.sub, JSON.stringify(pl), { TTL: ttl, urgency: 'high' }); n++; }
+    catch (e) { console.warn('Értesítés hiba:', e.statusCode || '', e.body || e.message); }
+  }
+  return n;
+}
+
 async function notify(doc) {
   let cfgs = [];
   try { const raw = (process.env.PUSH_CONFIG || '').trim(); if (raw) { const j = JSON.parse(raw); cfgs = Array.isArray(j) ? j : [j]; } }
@@ -175,7 +191,8 @@ async function notify(doc) {
 }
 
 const bpHour = () => +new Date().toLocaleString('en-GB', { timeZone: TZ, hour: '2-digit', hour12: false }).slice(0, 2);
-(async () => {
+module.exports = { FEEDS, SECTIONS, readFeeds, sendPush, get };
+if (require.main === module) (async () => {
   let mode = (process.argv[2] || 'auto').toLowerCase();
   if (mode === 'auto') {
     const force = (process.env.KENYSZER || '').trim(), h = bpHour();
