@@ -36,7 +36,7 @@ const SECTIONS = [
   ['hu_pol', '🇭🇺', 'Magyar politika'], ['world', '🌍', 'Világpolitika'], ['hu_mkt', '📊', 'Magyar gazdaság és tőzsde'], ['w_mkt', '💹', 'Világgazdaság és tőzsde'],
 ];
 
-const UA = { 'User-Agent': 'Mozilla/5.0 (hirapp)', Accept: '*/*' };
+const UA = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36 hirapp', Accept: 'application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, application/json;q=0.8, text/html;q=0.7, */*;q=0.5', 'Accept-Language': 'hu-HU,hu;q=0.9,en;q=0.8' };
 async function get(url, opts = {}, ms = 15000) {
   const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
   try { return await fetch(url, { ...opts, headers: { ...UA, ...(opts.headers || {}) }, signal: ac.signal }); }
@@ -62,7 +62,7 @@ function parseFeed(xml, source) {
   return out;
 }
 // Állapotnapló az alkalmazás „Állapot” oldalához: melyik forrás / árfolyam működik
-const STATUS = { feeds: {}, quotes: {} };
+const STATUS = { feeds: {}, quotes: {}, pushErr: null };
 async function readFeeds(list, hours) {
   const since = Date.now() - hours * 3600e3, out = [], seen = new Set();
   const res = await Promise.allSettled(list.map(async ([name, url]) => {
@@ -244,8 +244,9 @@ async function sendPushDevice(c, payloads, ttl = 3600) {
   let n = 0;
   for (const pl of payloads) {
     try { webpush.setVapidDetails(vapidSubject(), c.vapidPublic, c.vapidPrivate); await webpush.sendNotification(c.sub, JSON.stringify(pl), { TTL: ttl, urgency: 'high' }); n++; }
-    catch (e) { console.warn('Értesítés hiba:', e.statusCode || '', e.body || e.message); }
+    catch (e) { console.warn('Értesítés hiba:', e.statusCode || '', e.body || e.message); STATUS.pushErr = { t: Date.now(), code: e.statusCode || 0, msg: String(e.body || e.message || '').slice(0, 120), host: (() => { try { return new URL(c.sub.endpoint).hostname; } catch (x) { return ''; } })() }; }
   }
+  if (n) STATUS.pushOk = Date.now();
   return n;
 }
 async function sendPush(payloads, ttl = 3600) {

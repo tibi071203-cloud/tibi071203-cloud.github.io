@@ -1173,7 +1173,15 @@ EXTRA_AFTER.status = async () => {
   h += row('⏱️', 'Utolsó frissítés', new Date(d.updated).toLocaleString('hu-HU') + ' (' + (age < 1 ? 'most' : Math.round(age) + ' perce') + ')', ok);
   h += row('📰', 'Hírforrások', fOk + ' / ' + fe.length + ' működik', fOk === fe.length);
   h += row('📈', 'Árfolyamok', qOk + ' / ' + qu.length + ' működik', qOk === qu.length);
-  h += row('🔔', 'Mai értesítések', (d.push && d.push.date === new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Budapest' }) ? d.push.n : 0) + ' db · ' + d.devices + ' készülék (' + d.synced + ' szinkronizálva)', d.devices > 0);
+  const pe = d.pushErr, peBad = pe && (!d.pushOk || pe.t > d.pushOk);
+  if (peBad) {
+    const why = pe.code === 404 || pe.code === 410 ? 'A telefon értesítési feliratkozása lejárt vagy megszűnt. Kapcsold be újra az értesítéseket (☰ Több → 🔔 Értesítések), és az ott kapott új kódot tedd be a GitHubon a PUSH_CONFIG titokba.'
+      : pe.code === 403 || pe.code === 401 ? 'A PUSH_CONFIG-ban lévő kulcs nem egyezik a telefonéval. Másold be újra a telefon által adott kódot a PUSH_CONFIG titokba.'
+      : 'Az értesítés-szolgáltató hibát adott (' + (pe.code || '?') + '). Ha tartósan így marad, kapcsold be újra az értesítéseket.';
+    h += '<div class="li" style="border:1px solid rgba(255,93,93,.5);border-radius:12px;padding:10px;margin:6px 0"><div style="font-size:20px">🚫</div><div class="g"><b>Az értesítések nem jutnak el</b><small>' + esc(why) + '<br>Utolsó hiba: ' + new Date(pe.t).toLocaleString('hu-HU') + ' · kód ' + (pe.code || '?') + (pe.host ? ' · ' + esc(pe.host) : '') + '</small></div></div>';
+  }
+  if (d.summary) h += row('📰', 'Elmaradt összefoglaló pótolva', (d.summary.kind === 'reggel' ? 'Reggeli' : 'Esti') + ' · ' + new Date(d.summary.t).toLocaleString('hu-HU'), true);
+  h += row('🔔', 'Mai értesítések', (d.push && d.push.date === new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Budapest' }) ? d.push.n : 0) + ' db · ' + d.devices + ' készülék (' + d.synced + ' szinkronizálva)' + (d.pushOk ? ' · utolsó sikeres: ' + new Date(d.pushOk).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''), d.devices > 0 && !peBad);
   const dd = d.data || {};
   h += row('🗂️', 'Adatok', dd.hirek + ' friss hír · ' + dd.grafikon + ' grafikon · ' + dd.naptar + ' naptáresemény · ' + dd.mutatok + ' mutató · ' + dd.kutatasok + ' kutatás', dd.hirek > 0);
   const bad = fe.filter(([, v]) => !v.ok).concat(qu.filter(([, v]) => !v.ok));

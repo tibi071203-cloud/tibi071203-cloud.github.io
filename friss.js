@@ -158,7 +158,7 @@ const pct = (x) => (x > 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + '%';
         }
         const send = out.slice(-MAX_PER_ROUND);
         if (out.length > send.length) send.unshift({ title: '📰 Napi Hírek', body: '+' + (out.length - send.length) + ' további új hír – nyisd meg az alkalmazást.', url: APP, tag: 'h-tobb' });
-        if (send.length) console.log(new Date().toISOString().slice(11, 19) + ' ' + B.deviceId(c) + ': ' + (await sendPushDevice(c, send)) + ' hír-értesítés');
+        if (send.length) console.log(new Date().toISOString().slice(11, 19) + ' ' + B.deviceId(c) + ': ' + (await sendPushDevice(c, send)) + ' / ' + send.length + ' hír-értesítés elküldve');
       }
       first = false;
 
@@ -182,6 +182,25 @@ const pct = (x) => (x > 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + '%';
         if (out.length) console.log('Riasztás ' + B.deviceId(c) + ': ' + (await sendPushDevice(c, out, 6 * 3600)));
       }
       for (const k of Object.keys(st.alerts)) if (Date.now() - st.alerts[k] > 3 * 86400e3) delete st.alerts[k];
+
+      // ha a GitHub kihagyta a reggeli/esti összefoglaló időzítését, itt pótoljuk (7:20 után / 18:20 után)
+      if (process.env.GITHUB_REPOSITORY && process.env.GH_TOKEN && round % 3 === 1) {
+        const b2 = bpNow(), mins = b2.h * 60 + b2.m;
+        const want = mins >= 18 * 60 + 20 ? 'este' : mins >= 7 * 60 + 20 ? 'reggel' : '';
+        const tk = 'sum-' + b2.date + '-' + want;
+        if (want && !st.times[tk]) {
+          try {
+            const r = await get('https://raw.githubusercontent.com/' + process.env.GITHUB_REPOSITORY + '/main/data/latest.json?t=' + Date.now());
+            const lj = r.ok ? await r.json() : null;
+            if (lj && lj.id === b2.date + '-' + want) st.times[tk] = Date.now();
+            else if (lj) {
+              st.times[tk] = Date.now();
+              execFileSync('gh', ['workflow', 'run', 'hirek.yml', '--repo', process.env.GITHUB_REPOSITORY, '-f', 'tipus=' + want], { stdio: 'pipe', env: process.env });
+              st.sumLog = { t: Date.now(), kind: want }; console.log('Elmaradt ' + want + 'i összefoglaló – elindítva.');
+            }
+          } catch (e) { logErr('Összefoglaló pótlása: ' + String(e.stderr || e.message).slice(0, 120)); }
+        }
+      }
 
       // tőzsdezárás-összegzés hétköznap 17:10 és 17:59 között (egyszer naponta)
       const bp = bpNow();
@@ -221,7 +240,8 @@ const pct = (x) => (x > 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + '%';
       if (charts) files['charts.json'] = { updated: now, charts };
       if (macro) files['makro.json'] = { updated: now, items: macro };
       if (polls) files['kozvelemeny.json'] = { updated: now, ...polls };
-      files['allapot.json'] = { updated: now, runStart: new Date(t0).toISOString(), round, feeds: STATUS.feeds, quotes: STATUS.quotes, push: st.push, devices: cfgs.length, synced: [...settings.values()].filter((x) => x._synced).length, errors: ERRORS,
+      if (STATUS.pushOk) st.pushOk = STATUS.pushOk;
+      files['allapot.json'] = { updated: now, pushErr: STATUS.pushErr, pushOk: STATUS.pushOk || st.pushOk || null, summary: st.sumLog || null, runStart: new Date(t0).toISOString(), round, feeds: STATUS.feeds, quotes: STATUS.quotes, push: st.push, devices: cfgs.length, synced: [...settings.values()].filter((x) => x._synced).length, errors: ERRORS,
         data: { hirek: latest.length, arfolyam: quotes ? quotes.length : 0, grafikon: charts ? Object.keys(charts).length : 0, naptar: calendar ? calendar.length : 0, mutatok: macro ? macro.length : 0, kutatasok: polls ? polls.polls.length : 0 } };
       publish(files);
       fs.writeFileSync(STATE_FILE, JSON.stringify(st));
