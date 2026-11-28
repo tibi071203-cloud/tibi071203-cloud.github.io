@@ -37,6 +37,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           APP_URL: https://${{ github.repository_owner }}.github.io/
           FUTASI_PERC: '25'
+          LEPES_MP: '600'
         run: node friss.js
       - name: Látott hírek mentése
         if: always()
